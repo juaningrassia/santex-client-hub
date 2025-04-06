@@ -1,0 +1,138 @@
+
+import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import MainLayout from '@/components/Layout/MainLayout';
+import { clients } from '@/data/clients';
+import { ArrowLeft, Building, Mail, Phone, MapPin, Calendar, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Link } from 'react-router-dom';
+import ExternalAnalysis from './analysis/ExternalAnalysis';
+import InternalAnalysis from './analysis/InternalAnalysis';
+
+const ClientDetail = () => {
+  const { id } = useParams<{ id: string }>();
+  const client = clients.find((c) => c.id === Number(id));
+  
+  if (!client) {
+    return (
+      <MainLayout>
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Client not found</h2>
+          <p className="text-gray-600 mb-6">The client you're looking for doesn't exist or has been removed.</p>
+          <Link to="/clients">
+            <Button>Return to Clients</Button>
+          </Link>
+        </div>
+      </MainLayout>
+    );
+  }
+  
+  return (
+    <MainLayout>
+      <div className="mb-6">
+        <Link to="/clients" className="text-gray-600 flex items-center gap-1 mb-4 hover:text-gray-900">
+          <ArrowLeft size={16} />
+          Back to Clients
+        </Link>
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">{client.name}</h1>
+            <p className="text-gray-500">{client.industry}</p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <span className={`px-3 py-1 text-sm rounded-full ${
+              client.status === 'Active' 
+                ? 'bg-green-100 text-green-700' 
+                : client.status === 'At Risk'
+                ? 'bg-red-100 text-red-700'
+                : 'bg-gray-100 text-gray-700'
+            }`}>
+              {client.status}
+            </span>
+            
+            <Button variant="outline">Edit</Button>
+            <Button variant="default">Contact</Button>
+          </div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="stats-card lg:col-span-1">
+          <h3 className="card-header mb-4">Client Information</h3>
+          
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="text-gray-400 mt-0.5">
+                <Building size={18} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Company Address</p>
+                <p className="text-gray-800">{client.address}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="text-gray-400 mt-0.5">
+                <Mail size={18} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Email</p>
+                <p className="text-gray-800">{client.contactEmail}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="text-gray-400 mt-0.5">
+                <Phone size={18} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Phone</p>
+                <p className="text-gray-800">{client.contactPhone}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="text-gray-400 mt-0.5">
+                <Calendar size={18} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Client Since</p>
+                <p className="text-gray-800">{new Date(client.startDate).toLocaleDateString()}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="text-gray-400 mt-0.5">
+                <FileText size={18} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Notes</p>
+                <p className="text-gray-800">{client.notes}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="external" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="external">External Analysis</TabsTrigger>
+              <TabsTrigger value="internal">Internal Analysis</TabsTrigger>
+            </TabsList>
+            <TabsContent value="external">
+              <ExternalAnalysis client={client} />
+            </TabsContent>
+            <TabsContent value="internal">
+              <InternalAnalysis client={client} />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </MainLayout>
+  );
+};
+
+export default ClientDetail;
