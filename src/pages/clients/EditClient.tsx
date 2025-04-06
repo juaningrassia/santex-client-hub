@@ -3,37 +3,47 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
 import ClientForm from './ClientForm';
-import { getClientById, updateClient } from '@/data/clients';
+import { Client, getClientById, updateClient } from '@/data/clients';
 import { toast } from '@/components/ui/use-toast';
 
 const EditClient = () => {
   const { id } = useParams<{ id: string }>();
-  const [client, setClient] = useState(null);
+  const [client, setClient] = useState<Client | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingClient, setIsLoadingClient] = useState(true);
   const navigate = useNavigate();
   
   useEffect(() => {
     if (id) {
-      const clientId = parseInt(id, 10);
-      const fetchedClient = getClientById(clientId);
-      
-      if (fetchedClient) {
-        setClient(fetchedClient);
-      } else {
+      try {
+        const clientId = parseInt(id, 10);
+        const fetchedClient = getClientById(clientId);
+        
+        if (fetchedClient) {
+          setClient(fetchedClient);
+        } else {
+          toast({
+            title: "Client not found",
+            description: "The requested client could not be found.",
+            variant: "destructive"
+          });
+          navigate('/clients');
+        }
+      } catch (error) {
+        console.error("Error fetching client:", error);
         toast({
-          title: "Client not found",
-          description: "The requested client could not be found.",
+          title: "Error",
+          description: "There was an error loading the client. Please try again.",
           variant: "destructive"
         });
         navigate('/clients');
+      } finally {
+        setIsLoadingClient(false);
       }
-      
-      setIsLoadingClient(false);
     }
   }, [id, navigate]);
   
-  const handleUpdateClient = (clientData: any) => {
+  const handleUpdateClient = (clientData: Omit<Client, 'id'>) => {
     if (!id) return;
     
     setIsLoading(true);
