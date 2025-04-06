@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,17 +16,33 @@ const Settings = () => {
   const [language, setLanguage] = useState('english');
   const [isSaving, setIsSaving] = useState(false);
   
+  // Cargar configuraciones guardadas al iniciar
+  useEffect(() => {
+    const savedPerplexityKey = localStorage.getItem('perplexityApiKey');
+    const savedOpenaiKey = localStorage.getItem('openaiApiKey');
+    const savedLanguage = localStorage.getItem('language');
+    
+    if (savedPerplexityKey) setPerplexityApiKey(savedPerplexityKey);
+    if (savedOpenaiKey) setOpenaiApiKey(savedOpenaiKey);
+    if (savedLanguage) setLanguage(savedLanguage);
+  }, []);
+  
   const handleSaveSettings = () => {
     setIsSaving(true);
     
-    // Simulate saving
+    // Guardar configuraciones en localStorage
+    localStorage.setItem('perplexityApiKey', perplexityApiKey);
+    localStorage.setItem('openaiApiKey', openaiApiKey);
+    localStorage.setItem('language', language);
+    
+    // Simular un breve tiempo de guardado
     setTimeout(() => {
       toast({
         title: "Settings saved",
         description: "Your API keys and preferences have been updated.",
       });
       setIsSaving(false);
-    }, 1000);
+    }, 500);
   };
   
   return (
@@ -52,7 +68,7 @@ const Settings = () => {
                   placeholder="Enter your Perplexity API key"
                 />
                 <p className="text-xs text-gray-500">
-                  Used for external market analysis and company insights.
+                  Used for external market analysis and company insights. Get it from <a href="https://www.perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">perplexity.ai/settings/api</a>
                 </p>
               </div>
               
