@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Client } from '@/data/clients';
 import { Button } from '@/components/ui/button';
 import { Upload, FileText, HelpCircle } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 interface InternalAnalysisProps {
   client: Client;
@@ -33,6 +34,10 @@ const InternalAnalysis = ({ client }: InternalAnalysisProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
+      toast({
+        title: "File selected",
+        description: `${e.target.files[0].name} is ready for analysis`,
+      });
     }
   };
   
@@ -47,6 +52,21 @@ const InternalAnalysis = ({ client }: InternalAnalysisProps) => {
       setIsLoading(false);
     }, 2000);
   };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setFile(e.dataTransfer.files[0]);
+      toast({
+        title: "File selected",
+        description: `${e.dataTransfer.files[0].name} is ready for analysis`,
+      });
+    }
+  };
   
   return (
     <div className="space-y-4">
@@ -57,7 +77,11 @@ const InternalAnalysis = ({ client }: InternalAnalysisProps) => {
         </p>
         
         <div className="flex flex-col gap-3 mb-4">
-          <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+          <div 
+            className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-primary/50 transition-colors relative"
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
             <div className="flex flex-col items-center justify-center">
               <Upload className="text-gray-400 mb-2" size={28} />
               <p className="text-gray-600 mb-2">
@@ -66,12 +90,16 @@ const InternalAnalysis = ({ client }: InternalAnalysisProps) => {
               <p className="text-xs text-gray-500">
                 Supports CSV, TXT, and PDF up to 10MB
               </p>
-              <input 
-                type="file" 
-                accept=".csv,.txt,.pdf" 
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                onChange={handleFileChange}
-              />
+              
+              <label className="mt-2 cursor-pointer">
+                <span className="text-sm text-primary">Browse files</span>
+                <input 
+                  type="file" 
+                  accept=".csv,.txt,.pdf" 
+                  className="hidden" 
+                  onChange={handleFileChange}
+                />
+              </label>
             </div>
           </div>
           
