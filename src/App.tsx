@@ -9,6 +9,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import ClientsIndex from "./pages/clients/ClientsIndex";
 import ClientDetail from "./pages/clients/ClientDetail";
+import AddClient from "./pages/clients/AddClient";
+import EditClient from "./pages/clients/EditClient";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -22,6 +24,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/clients" element={<ClientsIndex />} />
           <Route path="/clients/:id" element={<ClientDetail />} />
+          <Route path="/clients/add" element={<AddClient />} />
+          <Route path="/clients/:id/edit" element={<EditClient />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

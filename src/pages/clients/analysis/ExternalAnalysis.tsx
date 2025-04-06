@@ -1,9 +1,9 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Client } from '@/data/clients';
 import { Button } from '@/components/ui/button';
 import { Search, AlertTriangle, ArrowRight, TrendingUp, Newspaper, Link as LinkIcon } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
+import { Link } from 'react-router-dom';
 
 interface ExternalAnalysisProps {
   client: Client;
@@ -51,22 +51,20 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [apiKey, setApiKey] = useState('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  
+  // Cargar la API key desde localStorage al iniciar
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem('perplexityApiKey');
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
+    }
+  }, []);
   
   const handleSearch = async () => {
-    if (!apiKey && !showApiKeyInput) {
-      setShowApiKeyInput(true);
-      toast({
-        title: "API Key Needed",
-        description: "Please enter your Perplexity API key to continue.",
-      });
-      return;
-    }
-    
     if (!apiKey) {
       toast({
-        title: "API Key Required",
-        description: "Please enter your Perplexity API key.",
+        title: "API Key Missing",
+        description: <div>Please add your Perplexity API key in <Link to="/settings" className="underline">Settings</Link></div>,
         variant: "destructive"
       });
       return;
@@ -176,19 +174,11 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
           Enter a company name or industry to generate an AI-powered analysis using external data sources.
         </p>
         
-        {showApiKeyInput && (
-          <div className="mb-4">
-            <div className="relative flex-1 mb-2">
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Enter your Perplexity API key..."
-                className="pl-4 pr-4 py-2 border border-gray-200 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-            <p className="text-xs text-gray-500 mb-4">
-              You can get your Perplexity API key from <a href="https://www.perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">perplexity.ai/settings/api</a>
+        {!apiKey && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p className="text-sm text-yellow-800 flex items-center gap-2">
+              <AlertTriangle size={16} />
+              Perplexity API key not found. Please add it in the <Link to="/settings" className="font-medium underline">Settings</Link> page.
             </p>
           </div>
         )}
@@ -206,7 +196,7 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
           </div>
           <Button 
             onClick={handleSearch} 
-            disabled={isLoading || !searchTerm.trim()} 
+            disabled={isLoading || !searchTerm.trim() || !apiKey} 
             className="flex items-center gap-2"
           >
             {isLoading ? 'Analyzing...' : 'Analyze'}

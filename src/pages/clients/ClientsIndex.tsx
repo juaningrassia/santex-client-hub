@@ -1,14 +1,18 @@
 
 import React, { useState } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
-import { clients } from '@/data/clients';
-import { Link } from 'react-router-dom';
+import { clients, deleteClient } from '@/data/clients';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Search, 
   Filter, 
   ArrowUp, 
   ArrowDown, 
-  MoreHorizontal 
+  MoreHorizontal,
+  Plus,
+  Trash,
+  Edit,
+  ExternalLink 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -17,12 +21,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from '@/components/ui/use-toast';
 
 const ClientsIndex = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'revenue' | 'growth'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [clientToDelete, setClientToDelete] = useState<number | null>(null);
+  const navigate = useNavigate();
+  
+  // Find client to delete for alert dialog
+  const clientToDeleteData = clients.find(c => c.id === clientToDelete);
   
   // Filter and sort clients
   const filteredClients = clients
@@ -62,6 +82,29 @@ const ClientsIndex = () => {
       setSortBy(column);
       setSortOrder('asc');
     }
+  };
+  
+  // Handle delete client
+  const handleDeleteConfirm = () => {
+    if (clientToDelete === null) return;
+    
+    const clientName = clientToDeleteData?.name || 'Client';
+    const result = deleteClient(clientToDelete);
+    
+    if (result) {
+      toast({
+        title: "Client deleted",
+        description: `${clientName} has been successfully removed.`,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "There was an error deleting the client.",
+        variant: "destructive"
+      });
+    }
+    
+    setClientToDelete(null);
   };
   
   return (
@@ -104,7 +147,8 @@ const ClientsIndex = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          <Button variant="default">
+          <Button variant="default" onClick={() => navigate('/clients/add')}>
+            <Plus size={16} className="mr-1" />
             Add Client
           </Button>
         </div>
@@ -189,11 +233,21 @@ const ClientsIndex = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Link to={`/clients/${client.id}`} className="w-full">View Details</Link>
+                        <DropdownMenuItem onClick={() => navigate(`/clients/${client.id}`)}>
+                          <ExternalLink size={14} className="mr-2" />
+                          View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/clients/${client.id}/edit`)}>
+                          <Edit size={14} className="mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-red-600" 
+                          onClick={() => setClientToDelete(client.id)}
+                        >
+                          <Trash size={14} className="mr-2" />
+                          Delete
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
@@ -209,6 +263,28 @@ const ClientsIndex = () => {
           )}
         </div>
       </div>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog 
+        open={clientToDelete !== null} 
+        onOpenChange={(open) => !open && setClientToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the client {clientToDeleteData?.name}.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };

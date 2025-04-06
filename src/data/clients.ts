@@ -14,7 +14,8 @@ export interface Client {
   notes: string;
 }
 
-export const clients: Client[] = [
+// Lista inicial de clientes
+export let clients: Client[] = [
   {
     id: 1,
     name: "Acme Corporation",
@@ -156,3 +157,88 @@ export const clients: Client[] = [
     notes: "Stable client with consistent growth."
   }
 ];
+
+// Función para agregar un cliente nuevo
+export const addClient = (client: Omit<Client, 'id'>): Client => {
+  // Encontrar el ID más alto existente y sumar 1
+  const nextId = Math.max(0, ...clients.map(c => c.id)) + 1;
+  
+  // Crear nuevo cliente con ID
+  const newClient: Client = {
+    id: nextId,
+    ...client
+  };
+  
+  // Añadir al array y guardar en localStorage
+  clients = [...clients, newClient];
+  saveClientsToStorage();
+  
+  return newClient;
+};
+
+// Función para actualizar un cliente existente
+export const updateClient = (id: number, clientData: Omit<Client, 'id'>): Client | null => {
+  // Buscar el índice del cliente
+  const index = clients.findIndex(c => c.id === id);
+  
+  if (index === -1) return null;
+  
+  // Actualizar el cliente
+  const updatedClient: Client = {
+    id,
+    ...clientData
+  };
+  
+  // Reemplazar en el array
+  clients = [
+    ...clients.slice(0, index),
+    updatedClient,
+    ...clients.slice(index + 1)
+  ];
+  
+  // Guardar en localStorage
+  saveClientsToStorage();
+  
+  return updatedClient;
+};
+
+// Función para eliminar un cliente
+export const deleteClient = (id: number): boolean => {
+  // Verificar si el cliente existe
+  const clientExists = clients.some(c => c.id === id);
+  
+  if (!clientExists) return false;
+  
+  // Filtrar el cliente a eliminar
+  clients = clients.filter(c => c.id !== id);
+  
+  // Guardar en localStorage
+  saveClientsToStorage();
+  
+  return true;
+};
+
+// Función para obtener un cliente por ID
+export const getClientById = (id: number): Client | undefined => {
+  return clients.find(c => c.id === id);
+};
+
+// Función para persistir los clientes en localStorage
+const saveClientsToStorage = () => {
+  localStorage.setItem('clients', JSON.stringify(clients));
+};
+
+// Función para cargar clientes desde localStorage (llámala al inicio de la app)
+export const loadClientsFromStorage = (): void => {
+  const storedClients = localStorage.getItem('clients');
+  if (storedClients) {
+    clients = JSON.parse(storedClients);
+  }
+};
+
+// Llamar loadClientsFromStorage al inicio
+try {
+  loadClientsFromStorage();
+} catch (error) {
+  console.error("Error loading clients from localStorage:", error);
+}
