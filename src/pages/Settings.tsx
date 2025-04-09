@@ -82,7 +82,7 @@ const Settings = () => {
                   placeholder="Enter your OpenAI API key"
                 />
                 <p className="text-xs text-gray-500">
-                  Used for internal document analysis and strategic recommendations.
+                  Used for internal document analysis and strategic recommendations. This key will be used when analyzing documents in the client details page.
                 </p>
               </div>
             </div>
