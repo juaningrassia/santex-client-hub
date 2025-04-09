@@ -155,25 +155,13 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
     
     try {
       const prompt = `
-      #CONTEXT: Adopt the role of a strategic business researcher. Your task is to analyze a specific company and its industry in depth, identifying key risks and growth opportunities based on current market dynamics, competitive environment, and technological trends.
+      You are an expert business intelligence analyst specialized in producing strategic analysis reports for companies.
 
-      #ROLE: You are an expert in business intelligence and market research. Your objective is to generate a concise, evidence-based briefing that highlights business-critical insights for strategic decision-making.
+      Based on the latest market data, please conduct an in-depth analysis of ${searchTerm}.
 
-      #INSTRUCTIONS: Conduct deep research on ${searchTerm} and its industry, focusing on:
-
-      Company-Level Analysis
-      - What are the main risks currently facing the company?
-      - What opportunities for growth are available to the company?
-      - Include recent events, financial performance, leadership decisions, regulatory issues, or market disruptions.
-
-      Industry-Level Analysis
-      - What are the primary risks affecting the industry as a whole?
-      - What are the key growth trends or opportunities in the industry?
-      - Consider economic shifts, innovation patterns, regulatory developments, and competitive dynamics.
-
-      #RESPONSE FORMAT: Format your response in JSON with the following structure:
+      Important: You MUST respond with properly formatted JSON that follows this exact structure:
       {
-        "executiveSummary": ["Insight 1", "Insight 2", "Insight 3", "Insight 4", "Insight 5"],
+        "executiveSummary": ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5"],
         "companyRisks": [
           {"risk": "Risk 1", "explanation": "Explanation with citation [1]"},
           {"risk": "Risk 2", "explanation": "Explanation with citation [2]"},
@@ -204,6 +192,8 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
           }
         ]
       }
+
+      Your response must be valid, parseable JSON with no additional text or formatting. No markdown, no explanations outside the JSON, just the JSON object.
       `;
       
       console.log("Sending request to Perplexity API with prompt:", prompt);
@@ -219,14 +209,14 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
           messages: [
             {
               role: 'system',
-              content: 'You are an expert business intelligence analyst. Provide detailed, evidence-based analysis using the specified JSON format only.'
+              content: 'You are an expert business intelligence analyst. You MUST respond with properly formatted JSON only. No markdown formatting, no text outside the JSON object.'
             },
             {
               role: 'user',
               content: prompt
             }
           ],
-          temperature: 0.2,
+          temperature: 0.1, // Lower temperature for more consistent outputs
           top_p: 0.9,
           max_tokens: 2000,
           return_images: false,
@@ -249,11 +239,31 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
         try {
           // Extract JSON from response
           const contentText = data.choices[0].message.content;
-          const jsonMatch = contentText.match(/\{[\s\S]*\}/);
-          const jsonStr = jsonMatch ? jsonMatch[0] : contentText;
+          console.log("Raw content from API:", contentText);
           
-          const parsedData = JSON.parse(jsonStr);
+          // Try to parse the JSON directly first
+          let parsedData;
+          try {
+            parsedData = JSON.parse(contentText);
+          } catch (initialParseError) {
+            // If direct parsing fails, try to extract JSON using regex
+            console.log("Direct JSON parse failed, trying regex extraction");
+            const jsonMatch = contentText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const jsonStr = jsonMatch[0];
+              console.log("Extracted JSON string:", jsonStr);
+              parsedData = JSON.parse(jsonStr);
+            } else {
+              throw new Error("Could not extract JSON from response");
+            }
+          }
+          
           console.log("Parsed response data:", parsedData);
+          
+          // Validate the structure of the parsed data
+          if (!parsedData.executiveSummary || !Array.isArray(parsedData.executiveSummary)) {
+            throw new Error("Invalid response structure: missing executiveSummary array");
+          }
           
           setAnalysisData(parsedData);
           toast({
