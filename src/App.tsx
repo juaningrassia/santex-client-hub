@@ -3,10 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Pages
-import Index from "./pages/Index";
 import ClientsIndex from "./pages/clients/ClientsIndex";
 import ClientDetail from "./pages/clients/ClientDetail";
 import AddClient from "./pages/clients/AddClient";
@@ -21,7 +20,7 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Navigate to="/clients" replace />} />
           <Route path="/clients" element={<ClientsIndex />} />
           <Route path="/clients/:id" element={<ClientDetail />} />
           <Route path="/clients/add" element={<AddClient />} />
