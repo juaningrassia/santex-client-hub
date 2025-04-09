@@ -38,8 +38,8 @@ const Settings = () => {
     // Simular un breve tiempo de guardado
     setTimeout(() => {
       toast({
-        title: "Configuración guardada",
-        description: "Tus API keys y preferencias han sido actualizadas.",
+        title: "Settings saved",
+        description: "Your API keys and preferences have been updated.",
       });
       setIsSaving(false);
     }, 500);
@@ -48,13 +48,13 @@ const Settings = () => {
   return (
     <MainLayout>
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Configuración</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">Settings</h1>
         
         <div className="space-y-6">
           <div className="stats-card">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">API Keys</h2>
             <p className="text-gray-600 mb-6">
-              Configura tus API keys para habilitar el análisis de datos externos y el procesamiento de archivos.
+              Configure your API keys to enable external data analysis and file processing.
             </p>
             
             <div className="space-y-4">
@@ -65,10 +65,10 @@ const Settings = () => {
                   type="password"
                   value={perplexityApiKey}
                   onChange={(e) => setPerplexityApiKey(e.target.value)}
-                  placeholder="Introduce tu API key de Perplexity"
+                  placeholder="Enter your Perplexity API key"
                 />
                 <p className="text-xs text-gray-500">
-                  Usada para análisis de mercado externo e información de empresas. Obtenla en <a href="https://www.perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">perplexity.ai/settings/api</a>
+                  Used for external market analysis and company insights. Get it from <a href="https://www.perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">perplexity.ai/settings/api</a>
                 </p>
               </div>
               
@@ -79,30 +79,29 @@ const Settings = () => {
                   type="password"
                   value={openaiApiKey}
                   onChange={(e) => setOpenaiApiKey(e.target.value)}
-                  placeholder="Introduce tu API key de OpenAI"
+                  placeholder="Enter your OpenAI API key"
                 />
                 <p className="text-xs text-gray-500">
-                  Usada para el análisis de documentos internos en la sección de Análisis Interno de cada cliente. 
-                  Permite procesar archivos CSV, TXT y PDF para obtener insights estratégicos.
+                  Used for internal document analysis and strategic recommendations.
                 </p>
               </div>
             </div>
           </div>
           
           <div className="stats-card">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Preferencias</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Preferences</h2>
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Idioma de la Interfaz</Label>
+                <Label>Interface Language</Label>
                 <RadioGroup value={language} onValueChange={setLanguage}>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="english" id="english" />
-                    <Label htmlFor="english">Inglés</Label>
+                    <Label htmlFor="english">English</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="spanish" id="spanish" />
-                    <Label htmlFor="spanish">Español</Label>
+                    <Label htmlFor="spanish">Spanish</Label>
                   </div>
                 </RadioGroup>
               </div>
@@ -114,7 +113,7 @@ const Settings = () => {
               onClick={handleSaveSettings} 
               disabled={isSaving}
             >
-              {isSaving ? 'Guardando...' : 'Guardar Configuración'}
+              {isSaving ? 'Saving...' : 'Save Settings'}
             </Button>
           </div>
         </div>
