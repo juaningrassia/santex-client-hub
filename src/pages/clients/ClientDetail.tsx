@@ -1,11 +1,12 @@
 
-import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
 import { clients } from '@/data/clients';
 import { ArrowLeft, Building, Mail, Phone, MapPin, Calendar, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Link } from 'react-router-dom';
 import ExternalAnalysis from './analysis/ExternalAnalysis';
 import InternalAnalysis from './analysis/InternalAnalysis';
 
@@ -52,7 +53,7 @@ const ClientDetail = () => {
               {client.status}
             </span>
             
-            <Link to={`/clients/${id}/edit`}>
+            <Link to={`/clients/${client.id}/edit`}>
               <Button variant="outline">Edit</Button>
             </Link>
             <Button variant="default">Contact</Button>

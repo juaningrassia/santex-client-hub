@@ -9,28 +9,20 @@ interface InternalAnalysisProps {
   client: Client;
 }
 
-// Mock API response data with the new format
+// Mock API response data
 const mockAnalysisData = {
-  executiveSummary: `Restaurant Brands International (RBI) is in a growth phase, with plans to expand their global footprint in the QSR industry. They've recently invested in digital transformation initiatives to enhance customer experience across their brands (Burger King, Tim Hortons, Popeyes, and Firehouse Subs).
-
-Their primary business goal is to increase same-store sales by 5% while opening 1,800 new locations globally by the end of 2025. They've purchased our enterprise CRM solution and mobile ordering platform, but implementation in key markets is behind schedule by approximately 2 months.
-
-RBI is facing increased competition in the QSR space and rising operational costs due to inflation and supply chain disruptions. Additionally, they're struggling with inconsistent brand experience across franchised locations.
-
-There are significant opportunities to expand our relationship through our loyalty program integration and data analytics package, which would address their customer retention challenges and provide actionable insights for their marketing team.
-
-We recommend prioritizing the completion of the mobile ordering platform implementation, proposing our analytics solution to address franchise consistency issues, and developing a roadmap for potential loyalty program integration in Q3.`,
+  executiveSummary: "Based on the internal data provided, Acme Corporation shows strong growth potential but has several areas requiring attention. Their customer satisfaction scores are trending positively (up 12% YoY), but there are notable gaps in their product deployment strategy that need addressing.",
   strategicQuestions: [
-    "Given your aggressive expansion target of 1,800 new locations, which specific markets are you prioritizing, and how can our technology better support those regional rollouts?",
-    "Your mobile ordering implementation is currently 2 months behind schedule. What specific challenges are you facing with the deployment, and how can we restructure our approach to accelerate adoption?",
-    "How are you currently measuring and addressing the inconsistent brand experience across franchised locations, and what data points would be most valuable to track?",
-    "Your competitors are gaining market share in the delivery segment. How satisfied are you with your current delivery integration, and what improvements would make the biggest impact on your business?",
-    "We've noticed your marketing team is manually aggregating customer data from multiple sources. How much time could they save with an integrated analytics solution, and what insights are they currently missing?",
-    "What specific metrics are your C-suite executives tracking to measure digital transformation ROI, and how frequently are these being reported?",
-    "The loyalty program integration we discussed could potentially increase customer retention by 23%. What concerns do you have about implementing this solution across your franchise network?",
-    "How are your franchisees responding to the new technology implementations, and what resistance points have you encountered that we should address together?",
-    "Your international expansion requires localization of both menu and technology. Which markets are presenting the biggest localization challenges that we could help solve?",
-    "What is your timeline for making a decision on the analytics package, and what specific ROI metrics would you need to see to move forward with implementation?"
+    "What progress has been made on the cloud migration project that was projected to reduce infrastructure costs by 30%?",
+    "Has the customer success team implemented the new onboarding process that was discussed during our last quarterly review?",
+    "How are you planning to address the 15% churn rate we're seeing in the SMB segment?",
+    "What resources do you need from our team to accelerate the implementation of the new security features?",
+    "Are there any regulatory concerns with the upcoming product launch in European markets?",
+    "How successful was the pilot program for the new enterprise solution?",
+    "Which competitors are you most concerned about in the next 6-12 months?",
+    "What's your timeline for expanding the development team that was mentioned in our last meeting?",
+    "Have you resolved the integration issues with our API that were reported last quarter?",
+    "What are your top three strategic priorities for the next fiscal year?"
   ]
 };
 
@@ -54,52 +46,10 @@ const InternalAnalysis = ({ client }: InternalAnalysisProps) => {
     
     setIsLoading(true);
     
-    // Updated GPT prompt with more data-driven requirements
-    const gptPrompt = `You are a senior B2B Account Manager with expertise in customer strategy and business development.
-
-Your task is to analyze the following internal client information and generate two outputs. Only use the data provided. Do not invent or assume any information that is not explicitly included in the input. If any required element is missing, say so.
-
----
-
-🔹 Part 1: Executive Summary  
-Create a concise and actionable summary of the client based **only on the content provided**.
-
-Include:
-- General description of the client and their current situation (if available)
-- Business goals (if mentioned or implied)
-- Products/services purchased and their status
-- Problems or risks explicitly stated
-- Opportunities mentioned or deduced logically
-- Recommendations based on available facts only
-
-⚠️ Do not make assumptions. If any item is missing in the input, state it clearly (e.g., "No business goals were mentioned").
-
----
-
-🔹 Part 2: 10 Strategic Questions  
-Generate 10 thoughtful, specific questions that an Account Manager could ask the client. These questions must:
-
-- Be based strictly on the data provided
-- Help uncover risks, needs, or opportunities mentioned in the input
-- Encourage deeper business conversations
-- Be consultative, not generic
-
-⚠️ Do not include any question unless it is clearly inspired by content in the input.
-
----
-
-Here is the internal client information:
-
-[Content from the uploaded file will be inserted here]`;
-    
     // Simulate API call
     setTimeout(() => {
       setAnalysisData(mockAnalysisData);
       setIsLoading(false);
-      toast({
-        title: "Analysis complete",
-        description: "Your document has been processed successfully",
-      });
     }, 2000);
   };
 
@@ -186,9 +136,7 @@ Here is the internal client information:
               <FileText className="text-primary mt-1" size={18} />
               <h3 className="font-medium text-gray-800">Executive Summary</h3>
             </div>
-            <div className="text-gray-600 whitespace-pre-line">
-              {analysisData.executiveSummary}
-            </div>
+            <p className="text-gray-600">{analysisData.executiveSummary}</p>
           </div>
           
           <div className="stats-card">
