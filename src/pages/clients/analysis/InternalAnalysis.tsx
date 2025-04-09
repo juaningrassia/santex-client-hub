@@ -143,10 +143,8 @@ const InternalAnalysis = ({ client }: InternalAnalysisProps) => {
     setIsLoading(true);
     
     try {
-      // Check if API key is set in localStorage before showing the dialog
+      // Check if API key is set
       const openaiApiKey = localStorage.getItem('openaiApiKey');
-      
-      // If API key is missing, show the dialog and stop analysis
       if (!openaiApiKey) {
         setShowApiKeyDialog(true);
         setIsLoading(false);
