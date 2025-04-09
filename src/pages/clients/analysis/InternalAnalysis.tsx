@@ -54,35 +54,37 @@ const InternalAnalysis = ({ client }: InternalAnalysisProps) => {
     
     setIsLoading(true);
     
-    // Here we would normally send the file to the backend with the GPT prompt
-    // This is where you'd include the new GPT prompt text
-    const gptPrompt = `You are a senior B2B Account Manager with deep expertise in customer strategy, business development, and consultative sales.
+    // Updated GPT prompt with more data-driven requirements
+    const gptPrompt = `You are a senior B2B Account Manager with expertise in customer strategy and business development.
 
-Your task is to analyze the following internal client information and generate two key outputs for an account review:
+Your task is to analyze the following internal client information and generate two outputs. Only use the data provided. Do not invent or assume any information that is not explicitly included in the input. If any required element is missing, say so.
 
 ---
 
 🔹 Part 1: Executive Summary  
-Write a concise and actionable summary of the client based on the provided data. Use clear business English in short paragraphs or bullet points.
+Create a concise and actionable summary of the client based **only on the content provided**.
 
 Include:
-- A general description of the client and their current situation
-- Their business goals (even if implicit)
-- Products or services purchased and their status
-- Any risks, issues or challenges mentioned
-- Opportunities to expand the relationship or improve results
-- Final recommendations for the Account Manager
+- General description of the client and their current situation (if available)
+- Business goals (if mentioned or implied)
+- Products/services purchased and their status
+- Problems or risks explicitly stated
+- Opportunities mentioned or deduced logically
+- Recommendations based on available facts only
+
+⚠️ Do not make assumptions. If any item is missing in the input, state it clearly (e.g., "No business goals were mentioned").
 
 ---
 
 🔹 Part 2: 10 Strategic Questions  
-Generate 10 insightful, non-generic questions the Account Manager should ask the client. These should:
-- Be tailored to the client's current situation and goals
-- Help uncover needs, risks, or growth opportunities
-- Encourage meaningful, strategic conversation
-- Be clear, consultative, and business-focused
+Generate 10 thoughtful, specific questions that an Account Manager could ask the client. These questions must:
 
-Avoid surface-level or generic questions. Focus on helping the AM unlock value and deepen the client relationship.
+- Be based strictly on the data provided
+- Help uncover risks, needs, or opportunities mentioned in the input
+- Encourage deeper business conversations
+- Be consultative, not generic
+
+⚠️ Do not include any question unless it is clearly inspired by content in the input.
 
 ---
 
