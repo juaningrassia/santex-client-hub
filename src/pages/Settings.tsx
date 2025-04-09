@@ -4,42 +4,34 @@ import MainLayout from '@/components/Layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  RadioGroup, 
-  RadioGroupItem 
-} from '@/components/ui/radio-group';
 import { toast } from '@/components/ui/use-toast';
 
 const Settings = () => {
   const [perplexityApiKey, setPerplexityApiKey] = useState('');
   const [openaiApiKey, setOpenaiApiKey] = useState('');
-  const [language, setLanguage] = useState('english');
   const [isSaving, setIsSaving] = useState(false);
   
-  // Cargar configuraciones guardadas al iniciar
+  // Load saved settings on init
   useEffect(() => {
     const savedPerplexityKey = localStorage.getItem('perplexityApiKey');
     const savedOpenaiKey = localStorage.getItem('openaiApiKey');
-    const savedLanguage = localStorage.getItem('language');
     
     if (savedPerplexityKey) setPerplexityApiKey(savedPerplexityKey);
     if (savedOpenaiKey) setOpenaiApiKey(savedOpenaiKey);
-    if (savedLanguage) setLanguage(savedLanguage);
   }, []);
   
   const handleSaveSettings = () => {
     setIsSaving(true);
     
-    // Guardar configuraciones en localStorage
+    // Save settings to localStorage
     localStorage.setItem('perplexityApiKey', perplexityApiKey);
     localStorage.setItem('openaiApiKey', openaiApiKey);
-    localStorage.setItem('language', language);
     
-    // Simular un breve tiempo de guardado
+    // Simulate brief saving time
     setTimeout(() => {
       toast({
         title: "Settings saved",
-        description: "Your API keys and preferences have been updated.",
+        description: "Your API keys have been updated.",
       });
       setIsSaving(false);
     }, 500);
@@ -84,26 +76,6 @@ const Settings = () => {
                 <p className="text-xs text-gray-500">
                   Used for internal document analysis and strategic insights. Required for analyzing client documents in the Internal Analysis section.
                 </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="stats-card">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Preferences</h2>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Interface Language</Label>
-                <RadioGroup value={language} onValueChange={setLanguage}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="english" id="english" />
-                    <Label htmlFor="english">English</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="spanish" id="spanish" />
-                    <Label htmlFor="spanish">Spanish</Label>
-                  </div>
-                </RadioGroup>
               </div>
             </div>
           </div>
