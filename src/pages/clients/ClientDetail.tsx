@@ -53,7 +53,9 @@ const ClientDetail = () => {
               {client.status}
             </span>
             
-            <Button variant="outline">Edit</Button>
+            <Link to={`/clients/${client.id}/edit`}>
+              <Button variant="outline">Edit</Button>
+            </Link>
             <Button variant="default">Contact</Button>
           </div>
         </div>
