@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Client } from '@/data/clients';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,6 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-
 interface InternalAnalysisProps {
   client: Client;
 }
@@ -21,51 +19,45 @@ interface AnalysisData {
   executiveSummary: string;
   strategicQuestions: string[];
 }
-
 const formSchema = z.object({
-  apiKey: z.string().min(1, "API Key is required"),
+  apiKey: z.string().min(1, "API Key is required")
 });
-
-const InternalAnalysis = ({ client }: InternalAnalysisProps) => {
+const InternalAnalysis = ({
+  client
+}: InternalAnalysisProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [fileContent, setFileContent] = useState<string>("");
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
-  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      apiKey: localStorage.getItem('openaiApiKey') || '',
-    },
+      apiKey: localStorage.getItem('openaiApiKey') || ''
+    }
   });
-  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
       toast({
         title: "File selected",
-        description: `${e.target.files[0].name} is ready for analysis`,
+        description: `${e.target.files[0].name} is ready for analysis`
       });
     }
   };
-  
   const readFileContent = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
-      reader.onload = (event) => {
+      reader.onload = event => {
         if (event.target?.result) {
           resolve(event.target.result as string);
         } else {
           reject(new Error("Failed to read file content"));
         }
       };
-      
       reader.onerror = () => {
         reject(new Error("Error reading file"));
       };
-      
       if (file.type === "application/pdf") {
         // For PDF files, we would ideally use a PDF parsing library
         // For this example, we'll just return a message
@@ -76,7 +68,6 @@ const InternalAnalysis = ({ client }: InternalAnalysisProps) => {
       }
     });
   };
-  
   const analyzeWithOpenAI = async (content: string, apiKey: string): Promise<AnalysisData> => {
     try {
       const prompt = `You are a senior B2B Account Manager with deep experience in customer strategy, sales, and business consulting.
@@ -123,39 +114,34 @@ Please format your response as a valid JSON object with the following structure:
   "executiveSummary": "Your executive summary here...",
   "strategicQuestions": ["Question 1", "Question 2", ...]
 }`;
-
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           model: "gpt-4o",
-          messages: [
-            {
-              role: "system",
-              content: "You are a helpful assistant that analyzes client data and provides business insights."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
+          messages: [{
+            role: "system",
+            content: "You are a helpful assistant that analyzes client data and provides business insights."
+          }, {
+            role: "user",
+            content: prompt
+          }],
           temperature: 0.7,
           max_tokens: 2000,
-          response_format: { type: "json_object" }
-        }),
+          response_format: {
+            type: "json_object"
+          }
+        })
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error?.message || 'Error communicating with OpenAI');
       }
-
       const data = await response.json();
       const result = JSON.parse(data.choices[0].message.content);
-      
       return {
         executiveSummary: result.executiveSummary,
         strategicQuestions: result.strategicQuestions
@@ -165,7 +151,6 @@ Please format your response as a valid JSON object with the following structure:
       throw error;
     }
   };
-  
   const handleAnalyze = async () => {
     if (!file) {
       toast({
@@ -175,29 +160,25 @@ Please format your response as a valid JSON object with the following structure:
       });
       return;
     }
-    
+
     // Check if OpenAI API key is available in localStorage
     const apiKey = localStorage.getItem('openaiApiKey');
-    
     if (!apiKey) {
       setShowApiKeyDialog(true);
       return;
     }
-    
     setIsLoading(true);
-    
     try {
       // Read file content
       const content = await readFileContent(file);
       setFileContent(content);
-      
+
       // Analyze with OpenAI
       const analysis = await analyzeWithOpenAI(content, apiKey);
       setAnalysisData(analysis);
-      
       toast({
         title: "Analysis complete",
-        description: "Document has been successfully analyzed",
+        description: "Document has been successfully analyzed"
       });
     } catch (error) {
       console.error("Error during analysis:", error);
@@ -210,32 +191,27 @@ Please format your response as a valid JSON object with the following structure:
       setIsLoading(false);
     }
   };
-
   const onSubmitApiKey = async (values: z.infer<typeof formSchema>) => {
     localStorage.setItem('openaiApiKey', values.apiKey);
     setShowApiKeyDialog(false);
-    
+
     // Proceed with analysis
     handleAnalyze();
   };
-
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
-
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       setFile(e.dataTransfer.files[0]);
       toast({
         title: "File selected",
-        description: `${e.dataTransfer.files[0].name} is ready for analysis`,
+        description: `${e.dataTransfer.files[0].name} is ready for analysis`
       });
     }
   };
-  
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       <div className="stats-card">
         <h3 className="card-header mb-4">Análisis de Datos Internos</h3>
         <p className="text-gray-600 mb-4">
@@ -243,11 +219,7 @@ Please format your response as a valid JSON object with the following structure:
         </p>
         
         <div className="flex flex-col gap-3 mb-4">
-          <div 
-            className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-primary/50 transition-colors relative"
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          >
+          <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-primary/50 transition-colors relative" onDragOver={handleDragOver} onDrop={handleDrop}>
             <div className="flex flex-col items-center justify-center">
               <Upload className="text-gray-400 mb-2" size={28} />
               <p className="text-gray-600 mb-2">
@@ -259,44 +231,32 @@ Please format your response as a valid JSON object with the following structure:
               
               <label className="mt-2 cursor-pointer">
                 <span className="text-sm text-primary">Explorar archivos</span>
-                <input 
-                  type="file" 
-                  accept=".csv,.txt,.pdf" 
-                  className="hidden" 
-                  onChange={handleFileChange}
-                />
+                <input type="file" accept=".csv,.txt,.pdf" className="hidden" onChange={handleFileChange} />
               </label>
             </div>
           </div>
           
-          <Button 
-            onClick={handleAnalyze} 
-            disabled={isLoading || !file} 
-            className="w-full"
-          >
+          <Button onClick={handleAnalyze} disabled={isLoading || !file} className="w-full">
             {isLoading ? 'Analizando...' : 'Analizar Documento'}
           </Button>
         </div>
         
         <div className="text-xs text-gray-500 flex items-start gap-1">
           <HelpCircle size={14} />
-          <span>Tus archivos se procesan de forma segura y no se almacenan permanentemente en nuestros servidores.</span>
+          <span>Powered by OpenAI API. Internal analysis typically takes 10-15 seconds.</span>
         </div>
       </div>
       
-      {isLoading && (
-        <div className="stats-card flex items-center justify-center py-12">
+      {isLoading && <div className="stats-card flex items-center justify-center py-12">
           <div className="text-center">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
               <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
             </div>
             <p className="mt-2 text-gray-600">Procesando tu documento...</p>
           </div>
-        </div>
-      )}
+        </div>}
       
-      {analysisData && !isLoading && (
-        <div className="space-y-4">
+      {analysisData && !isLoading && <div className="space-y-4">
           <div className="stats-card">
             <div className="flex items-start gap-2 mb-3">
               <FileText className="text-primary mt-1" size={18} />
@@ -311,15 +271,12 @@ Please format your response as a valid JSON object with the following structure:
               <h3 className="font-medium text-gray-800">Preguntas Estratégicas</h3>
             </div>
             <ol className="space-y-3 list-decimal list-inside">
-              {analysisData.strategicQuestions.map((question, index) => (
-                <li key={index} className="text-gray-600">
+              {analysisData.strategicQuestions.map((question, index) => <li key={index} className="text-gray-600">
                   {question}
-                </li>
-              ))}
+                </li>)}
             </ol>
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* API Key Dialog */}
       <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
@@ -334,19 +291,15 @@ Please format your response as a valid JSON object with the following structure:
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitApiKey)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="apiKey"
-                render={({ field }) => (
-                  <FormItem>
+              <FormField control={form.control} name="apiKey" render={({
+              field
+            }) => <FormItem>
                     <FormLabel>OpenAI API Key</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="sk-..." {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
               <div className="flex justify-end">
                 <Button type="submit">Continuar con el análisis</Button>
               </div>
@@ -354,8 +307,6 @@ Please format your response as a valid JSON object with the following structure:
           </Form>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default InternalAnalysis;
