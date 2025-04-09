@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, Settings, PieChart, File, BarChart4, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
 const Sidebar = () => {
   const location = useLocation();
   const path = location.pathname;
