@@ -10,6 +10,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+
 interface InternalAnalysisProps {
   client: Client;
 }
@@ -19,9 +20,11 @@ interface AnalysisData {
   executiveSummary: string;
   strategicQuestions: string[];
 }
+
 const formSchema = z.object({
   apiKey: z.string().min(1, "API Key is required")
 });
+
 const InternalAnalysis = ({
   client
 }: InternalAnalysisProps) => {
@@ -30,12 +33,14 @@ const InternalAnalysis = ({
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [fileContent, setFileContent] = useState<string>("");
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       apiKey: localStorage.getItem('openaiApiKey') || ''
     }
   });
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
@@ -45,6 +50,7 @@ const InternalAnalysis = ({
       });
     }
   };
+
   const readFileContent = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -68,6 +74,7 @@ const InternalAnalysis = ({
       }
     });
   };
+
   const analyzeWithOpenAI = async (content: string, apiKey: string): Promise<AnalysisData> => {
     try {
       const prompt = `You are a senior B2B Account Manager with deep experience in customer strategy, sales, and business consulting.
@@ -114,6 +121,7 @@ Please format your response as a valid JSON object with the following structure:
   "executiveSummary": "Your executive summary here...",
   "strategicQuestions": ["Question 1", "Question 2", ...]
 }`;
+
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -136,10 +144,12 @@ Please format your response as a valid JSON object with the following structure:
           }
         })
       });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error?.message || 'Error communicating with OpenAI');
       }
+
       const data = await response.json();
       const result = JSON.parse(data.choices[0].message.content);
       return {
@@ -151,6 +161,7 @@ Please format your response as a valid JSON object with the following structure:
       throw error;
     }
   };
+
   const handleAnalyze = async () => {
     if (!file) {
       toast({
@@ -167,6 +178,7 @@ Please format your response as a valid JSON object with the following structure:
       setShowApiKeyDialog(true);
       return;
     }
+
     setIsLoading(true);
     try {
       // Read file content
@@ -191,6 +203,7 @@ Please format your response as a valid JSON object with the following structure:
       setIsLoading(false);
     }
   };
+
   const onSubmitApiKey = async (values: z.infer<typeof formSchema>) => {
     localStorage.setItem('openaiApiKey', values.apiKey);
     setShowApiKeyDialog(false);
@@ -198,9 +211,11 @@ Please format your response as a valid JSON object with the following structure:
     // Proceed with analysis
     handleAnalyze();
   };
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
+
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -211,11 +226,12 @@ Please format your response as a valid JSON object with the following structure:
       });
     }
   };
+
   return <div className="space-y-4">
       <div className="stats-card">
-        <h3 className="card-header mb-4">Análisis de Datos Internos</h3>
+        <h3 className="card-header mb-4">Internal Data Analysis</h3>
         <p className="text-gray-600 mb-4">
-          Sube datos internos (CSV, TXT o PDF) para generar insights estratégicos y preguntas para reuniones con clientes.
+          Upload internal data (CSV, TXT or PDF) to generate strategic insights and questions for client meetings.
         </p>
         
         <div className="flex flex-col gap-3 mb-4">
@@ -223,21 +239,21 @@ Please format your response as a valid JSON object with the following structure:
             <div className="flex flex-col items-center justify-center">
               <Upload className="text-gray-400 mb-2" size={28} />
               <p className="text-gray-600 mb-2">
-                {file ? file.name : 'Arrastra y suelta un archivo, o haz clic para explorar'}
+                {file ? file.name : 'Drag and drop a file, or click to browse'}
               </p>
               <p className="text-xs text-gray-500">
-                Soporta CSV, TXT y PDF hasta 10MB
+                Supports CSV, TXT and PDF up to 10MB
               </p>
               
               <label className="mt-2 cursor-pointer">
-                <span className="text-sm text-primary">Explorar archivos</span>
+                <span className="text-sm text-primary">Browse files</span>
                 <input type="file" accept=".csv,.txt,.pdf" className="hidden" onChange={handleFileChange} />
               </label>
             </div>
           </div>
           
           <Button onClick={handleAnalyze} disabled={isLoading || !file} className="w-full">
-            {isLoading ? 'Analizando...' : 'Analizar Documento'}
+            {isLoading ? 'Analyzing...' : 'Analyze Document'}
           </Button>
         </div>
         
@@ -252,7 +268,7 @@ Please format your response as a valid JSON object with the following structure:
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
               <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
             </div>
-            <p className="mt-2 text-gray-600">Procesando tu documento...</p>
+            <p className="mt-2 text-gray-600">Processing your document...</p>
           </div>
         </div>}
       
@@ -260,7 +276,7 @@ Please format your response as a valid JSON object with the following structure:
           <div className="stats-card">
             <div className="flex items-start gap-2 mb-3">
               <FileText className="text-primary mt-1" size={18} />
-              <h3 className="font-medium text-gray-800">Resumen Ejecutivo</h3>
+              <h3 className="font-medium text-gray-800">Executive Summary</h3>
             </div>
             <div className="text-gray-600 whitespace-pre-line">{analysisData.executiveSummary}</div>
           </div>
@@ -268,7 +284,7 @@ Please format your response as a valid JSON object with the following structure:
           <div className="stats-card">
             <div className="flex items-start gap-2 mb-3">
               <HelpCircle className="text-primary mt-1" size={18} />
-              <h3 className="font-medium text-gray-800">Preguntas Estratégicas</h3>
+              <h3 className="font-medium text-gray-800">Strategic Questions</h3>
             </div>
             <ol className="space-y-3 list-decimal list-inside">
               {analysisData.strategicQuestions.map((question, index) => <li key={index} className="text-gray-600">
@@ -284,8 +300,8 @@ Please format your response as a valid JSON object with the following structure:
           <DialogHeader>
             <DialogTitle>OpenAI API Key Required</DialogTitle>
             <DialogDescription>
-              Para analizar documentos, necesitas proporcionar tu clave API de OpenAI. 
-              Puedes configurarla permanentemente en la página de Configuración.
+              To analyze documents, you need to provide your OpenAI API key. 
+              You can set it permanently in the Settings page.
             </DialogDescription>
           </DialogHeader>
           
@@ -301,7 +317,7 @@ Please format your response as a valid JSON object with the following structure:
                     <FormMessage />
                   </FormItem>} />
               <div className="flex justify-end">
-                <Button type="submit">Continuar con el análisis</Button>
+                <Button type="submit">Continue with analysis</Button>
               </div>
             </form>
           </Form>
@@ -309,4 +325,5 @@ Please format your response as a valid JSON object with the following structure:
       </Dialog>
     </div>;
 };
+
 export default InternalAnalysis;
