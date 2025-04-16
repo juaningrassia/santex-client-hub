@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { clients, deleteClient } from '@/data/clients';
@@ -34,52 +33,49 @@ import {
 import { toast } from '@/components/ui/use-toast';
 
 const ClientsIndex = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'name' | 'revenue' | 'growth'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [clientToDelete, setClientToDelete] = useState<number | null>(null);
-  const navigate = useNavigate();
   
-  // Find client to delete for alert dialog
-  const clientToDeleteData = clients.find(c => c.id === clientToDelete);
+  const clientToDeleteData = clientToDelete 
+    ? clients.find(c => c.id === clientToDelete)
+    : null;
   
-  // Filter and sort clients
+  // Filtrar clientes
   const filteredClients = clients
-    .filter((client) => {
-      // Filter by search term
-      const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      // Filter by status
-      const matchesStatus = statusFilter === 'all' || client.status.toLowerCase() === statusFilter.toLowerCase();
-      
+    .filter(client => {
+      const matchesSearch = client.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesStatus = 
+        statusFilter === 'all' || 
+        client.status.toLowerCase() === statusFilter.toLowerCase();
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
-      // Sort by selected field
-      if (sortBy === 'name') {
-        return sortOrder === 'asc' 
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name);
-      } else if (sortBy === 'revenue') {
-        return sortOrder === 'asc' 
-          ? a.revenue - b.revenue
-          : b.revenue - a.revenue;
-      } else {
-        return sortOrder === 'asc' 
-          ? a.growth - b.growth
-          : b.growth - a.growth;
+      const aValue = a[sortBy];
+      const bValue = b[sortBy];
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortOrder === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
       }
+      
+      return sortOrder === 'asc'
+        ? Number(aValue) - Number(bValue)
+        : Number(bValue) - Number(aValue);
     });
   
-  // Handle sort
-  const handleSort = (column: 'name' | 'revenue' | 'growth') => {
-    if (sortBy === column) {
-      // Toggle sort order if same column
+  // Manejar ordenamiento
+  const handleSort = (field: 'name' | 'revenue' | 'growth') => {
+    if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      // Set new sort column and default to ascending
-      setSortBy(column);
+      setSortBy(field);
       setSortOrder('asc');
     }
   };
@@ -194,7 +190,6 @@ const ClientsIndex = () => {
                     )}
                   </div>
                 </th>
-                <th className="pb-3 px-2 font-medium">Contact</th>
                 <th className="pb-3 pl-2 pr-4 font-medium"></th>
               </tr>
             </thead>
@@ -224,7 +219,6 @@ const ClientsIndex = () => {
                       {client.growth >= 0 ? '+' : ''}{client.growth}%
                     </span>
                   </td>
-                  <td className="py-4 px-2 text-gray-600">{client.contactName}</td>
                   <td className="py-4 pl-2 pr-4 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

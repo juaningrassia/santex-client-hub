@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -56,7 +55,6 @@ const ClientDetail = () => {
             <Link to={`/clients/${client.id}/edit`}>
               <Button variant="outline">Edit</Button>
             </Link>
-            <Button variant="default">Contact</Button>
           </div>
         </div>
       </div>
@@ -119,8 +117,8 @@ const ClientDetail = () => {
         </div>
         
         <div className="lg:col-span-2">
-          <Tabs defaultValue="external" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs defaultValue="external" className="space-y-4">
+            <TabsList>
               <TabsTrigger value="external">External Analysis</TabsTrigger>
               <TabsTrigger value="internal">Internal Analysis</TabsTrigger>
             </TabsList>

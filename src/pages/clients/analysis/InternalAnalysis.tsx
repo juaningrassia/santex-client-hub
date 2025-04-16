@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Client } from '@/data/clients';
 import { Button } from '@/components/ui/button';
-import { Upload, FileText, HelpCircle } from 'lucide-react';
+import { Upload, FileText, HelpCircle, AlertCircle, TrendingUp, AlertTriangle, ArrowUpRight, ArrowDownRight, LineChart, Download } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,17 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { exportToPDF } from '@/utils/pdfExport';
 
 interface InternalAnalysisProps {
   client: Client;
@@ -18,6 +29,32 @@ interface InternalAnalysisProps {
 // Define the structure for analysis data
 interface AnalysisData {
   executiveSummary: string;
+  riskScore: {
+    overall: number;
+    companyRisk: number;
+    industryRisk: number;
+    trend: 'up' | 'down' | 'stable';
+  };
+  companyRisks: Array<{
+    risk: string;
+    severity: 'high' | 'medium' | 'low';
+    explanation: string;
+  }>;
+  companyOpportunities: Array<{
+    opportunity: string;
+    potential: 'high' | 'medium' | 'low';
+    context: string;
+  }>;
+  industryRisks: Array<{
+    risk: string;
+    severity: 'high' | 'medium' | 'low';
+    explanation: string;
+  }>;
+  industryOpportunities: Array<{
+    opportunity: string;
+    potential: 'high' | 'medium' | 'low';
+    context: string;
+  }>;
   strategicQuestions: string[];
 }
 
@@ -65,11 +102,8 @@ const InternalAnalysis = ({
         reject(new Error("Error reading file"));
       };
       if (file.type === "application/pdf") {
-        // For PDF files, we would ideally use a PDF parsing library
-        // For this example, we'll just return a message
         resolve("PDF content extraction would happen here. This is a placeholder text.");
       } else {
-        // For text files like CSV, TXT
         reader.readAsText(file);
       }
     });
@@ -119,7 +153,41 @@ ${content}
 Please format your response as a valid JSON object with the following structure:
 {
   "executiveSummary": "Your executive summary here...",
-  "strategicQuestions": ["Question 1", "Question 2", ...]
+  "riskScore": {
+    "overall": 65,
+    "companyRisk": 70,
+    "industryRisk": 60,
+    "trend": "up"
+  },
+  "companyRisks": [
+    {
+      "risk": "Sample Company Risk 1",
+      "severity": "high",
+      "explanation": "Explanation of the risk..."
+    }
+  ],
+  "companyOpportunities": [
+    {
+      "opportunity": "Sample Company Opportunity 1",
+      "potential": "high",
+      "context": "Context of the opportunity..."
+    }
+  ],
+  "industryRisks": [
+    {
+      "risk": "Sample Industry Risk 1",
+      "severity": "medium",
+      "explanation": "Explanation of the industry risk..."
+    }
+  ],
+  "industryOpportunities": [
+    {
+      "opportunity": "Sample Industry Opportunity 1",
+      "potential": "high",
+      "context": "Context of the industry opportunity..."
+    }
+  ],
+  "strategicQuestions": ["Sample strategic question 1?", "Sample strategic question 2?"]
 }`;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -154,6 +222,11 @@ Please format your response as a valid JSON object with the following structure:
       const result = JSON.parse(data.choices[0].message.content);
       return {
         executiveSummary: result.executiveSummary,
+        riskScore: result.riskScore,
+        companyRisks: result.companyRisks,
+        companyOpportunities: result.companyOpportunities,
+        industryRisks: result.industryRisks,
+        industryOpportunities: result.industryOpportunities,
         strategicQuestions: result.strategicQuestions
       };
     } catch (error) {
@@ -172,7 +245,6 @@ Please format your response as a valid JSON object with the following structure:
       return;
     }
 
-    // Check if OpenAI API key is available in localStorage
     const apiKey = localStorage.getItem('openaiApiKey');
     if (!apiKey) {
       setShowApiKeyDialog(true);
@@ -181,11 +253,8 @@ Please format your response as a valid JSON object with the following structure:
 
     setIsLoading(true);
     try {
-      // Read file content
       const content = await readFileContent(file);
       setFileContent(content);
-
-      // Analyze with OpenAI
       const analysis = await analyzeWithOpenAI(content, apiKey);
       setAnalysisData(analysis);
       toast({
@@ -207,8 +276,6 @@ Please format your response as a valid JSON object with the following structure:
   const onSubmitApiKey = async (values: z.infer<typeof formSchema>) => {
     localStorage.setItem('openaiApiKey', values.apiKey);
     setShowApiKeyDialog(false);
-
-    // Proceed with analysis
     handleAnalyze();
   };
 
@@ -227,27 +294,157 @@ Please format your response as a valid JSON object with the following structure:
     }
   };
 
-  return <div className="space-y-4">
+  const getSeverityColor = (severity: 'high' | 'medium' | 'low') => {
+    switch (severity) {
+      case 'high':
+        return 'text-red-500';
+      case 'medium':
+        return 'text-yellow-500';
+      case 'low':
+        return 'text-green-500';
+    }
+  };
+
+  const getRiskScoreColor = (score: number) => {
+    if (score >= 75) return 'text-red-500';
+    if (score >= 50) return 'text-yellow-500';
+    return 'text-green-500';
+  };
+
+  const renderLoadingSkeleton = () => (
+    <div className="space-y-4">
+      {/* Risk Score Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
+          <Card key={i}>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <Skeleton className="h-4 w-1/2 mx-auto mb-2" />
+                <Skeleton className="h-8 w-16 mx-auto" />
+                <Skeleton className="h-4 w-1/3 mx-auto mt-2" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Executive Summary */}
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-1/3" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Risks and Opportunities */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-5 w-1/2" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-4 w-4/6" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Strategic Questions */}
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-1/3" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-4/6" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const handleExportPDF = async () => {
+    if (!analysisData) {
+      toast({
+        title: "No hay datos para exportar",
+        description: "You must first generate an analysis to export it.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await exportToPDF(
+        'internal-analysis-content',
+        `analisis_interno_${client.name.toLowerCase().replace(/\s+/g, '_')}`,
+        `Internal Analysis - ${client.name}`
+      );
+      
+      toast({
+        title: "Export successful",
+        description: "The analysis has been exported to PDF successfully.",
+      });
+    } catch (error) {
+      console.error('Error al exportar a PDF:', error);
+      toast({
+        title: "Error al exportar",
+        description: "Hubo un problema al generar el PDF. Por favor, intenta nuevamente.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
       <div className="stats-card">
-        <h3 className="card-header mb-4">Internal Data Analysis</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="card-header">Internal Data Analysis</h3>
+          {analysisData && (
+            <Button 
+              onClick={handleExportPDF}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Download size={16} />
+              Export PDF
+            </Button>
+          )}
+        </div>
         <p className="text-gray-600 mb-4">
-          Upload internal data (CSV, TXT or PDF) to generate strategic insights and questions for client meetings.
+          Upload internal data (CSV or TXT) to generate strategic insights and questions for client meetings.
         </p>
         
         <div className="flex flex-col gap-3 mb-4">
-          <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-primary/50 transition-colors relative" onDragOver={handleDragOver} onDrop={handleDrop}>
+          <div 
+            className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-primary/50 transition-colors relative" 
+            onDragOver={handleDragOver} 
+            onDrop={handleDrop}
+          >
             <div className="flex flex-col items-center justify-center">
               <Upload className="text-gray-400 mb-2" size={28} />
               <p className="text-gray-600 mb-2">
                 {file ? file.name : 'Drag and drop a file, or click to browse'}
               </p>
               <p className="text-xs text-gray-500">
-                Supports CSV, TXT and PDF up to 10MB
+                Supports CSV and TXT up to 10MB
               </p>
               
               <label className="mt-2 cursor-pointer">
                 <span className="text-sm text-primary">Browse files</span>
-                <input type="file" accept=".csv,.txt,.pdf" className="hidden" onChange={handleFileChange} />
+                <input type="file" accept=".csv,.txt" className="hidden" onChange={handleFileChange} />
               </label>
             </div>
           </div>
@@ -263,36 +460,206 @@ Please format your response as a valid JSON object with the following structure:
         </div>
       </div>
       
-      {isLoading && <div className="stats-card flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
-              <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
-            </div>
-            <p className="mt-2 text-gray-600">Processing your document...</p>
-          </div>
-        </div>}
+      {isLoading && renderLoadingSkeleton()}
       
-      {analysisData && !isLoading && <div className="space-y-4">
-          <div className="stats-card">
-            <div className="flex items-start gap-2 mb-3">
-              <FileText className="text-primary mt-1" size={18} />
-              <h3 className="font-medium text-gray-800">Executive Summary</h3>
-            </div>
-            <div className="text-gray-600 whitespace-pre-line">{analysisData.executiveSummary}</div>
+      {analysisData && !isLoading && (
+        <div id="internal-analysis-content" className="space-y-6">
+          {/* Risk Score Widget */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-none shadow-md">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">Overall Risk Score</h4>
+                  <div className={`text-4xl font-bold ${getRiskScoreColor(analysisData.riskScore.overall)}`}>
+                    {analysisData.riskScore.overall}%
+                  </div>
+                  <div className="flex items-center justify-center mt-2">
+                    {analysisData.riskScore.trend === 'up' ? (
+                      <ArrowUpRight className="text-red-500" size={16} />
+                    ) : analysisData.riskScore.trend === 'down' ? (
+                      <ArrowDownRight className="text-green-500" size={16} />
+                    ) : (
+                      <span className="text-yellow-500">→</span>
+                    )}
+                    <span className="text-sm text-gray-500 ml-1">Trend</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-none shadow-md">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">Company Risk</h4>
+                  <div className={`text-4xl font-bold ${getRiskScoreColor(analysisData.riskScore.companyRisk)}`}>
+                    {analysisData.riskScore.companyRisk}%
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-none shadow-md">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">Industry Risk</h4>
+                  <div className={`text-4xl font-bold ${getRiskScoreColor(analysisData.riskScore.industryRisk)}`}>
+                    {analysisData.riskScore.industryRisk}%
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          
-          <div className="stats-card">
-            <div className="flex items-start gap-2 mb-3">
-              <HelpCircle className="text-primary mt-1" size={18} />
-              <h3 className="font-medium text-gray-800">Strategic Questions</h3>
-            </div>
-            <ol className="space-y-3 list-decimal list-inside">
-              {analysisData.strategicQuestions.map((question, index) => <li key={index} className="text-gray-600">
-                  {question}
-                </li>)}
-            </ol>
+
+          {/* Executive Summary */}
+          <Card className="border-none shadow-md">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <FileText className="text-primary" size={20} />
+                <CardTitle className="text-xl">Executive Summary</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-gray-600 whitespace-pre-line">{analysisData.executiveSummary}</div>
+            </CardContent>
+          </Card>
+
+          {/* Risks and Opportunities */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border-none shadow-md">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="text-amber-500" size={20} />
+                  <CardTitle className="text-xl">Company Risks</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-5">
+                  {analysisData.companyRisks.map((item, index) => (
+                    <div key={index} className="pb-4 last:pb-0">
+                      <div className="flex items-start gap-2">
+                        <Badge variant="outline" className={`mt-1 bg-amber-50 text-amber-700 border-amber-200`}>
+                          {index + 1}
+                        </Badge>
+                        <div>
+                          <p className="font-medium text-gray-800">{item.risk}</p>
+                          <p className="text-gray-600 text-sm mt-1">{item.explanation}</p>
+                        </div>
+                      </div>
+                      {index < analysisData.companyRisks.length - 1 && (
+                        <Separator className="my-4" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-md">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="text-green-500" size={20} />
+                  <CardTitle className="text-xl">Company Opportunities</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-5">
+                  {analysisData.companyOpportunities.map((item, index) => (
+                    <div key={index} className="pb-4 last:pb-0">
+                      <div className="flex items-start gap-2">
+                        <Badge variant="outline" className={`mt-1 bg-green-50 text-green-700 border-green-200`}>
+                          {index + 1}
+                        </Badge>
+                        <div>
+                          <p className="font-medium text-gray-800">{item.opportunity}</p>
+                          <p className="text-gray-600 text-sm mt-1">{item.context}</p>
+                        </div>
+                      </div>
+                      {index < analysisData.companyOpportunities.length - 1 && (
+                        <Separator className="my-4" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-md">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="text-red-500" size={20} />
+                  <CardTitle className="text-xl">Industry Risks</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-5">
+                  {analysisData.industryRisks.map((item, index) => (
+                    <div key={index} className="pb-4 last:pb-0">
+                      <div className="flex items-start gap-2">
+                        <Badge variant="outline" className={`mt-1 bg-red-50 text-red-700 border-red-200`}>
+                          {index + 1}
+                        </Badge>
+                        <div>
+                          <p className="font-medium text-gray-800">{item.risk}</p>
+                          <p className="text-gray-600 text-sm mt-1">{item.explanation}</p>
+                        </div>
+                      </div>
+                      {index < analysisData.industryRisks.length - 1 && (
+                        <Separator className="my-4" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-md">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <LineChart className="text-blue-500" size={20} />
+                  <CardTitle className="text-xl">Industry Opportunities</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-5">
+                  {analysisData.industryOpportunities.map((item, index) => (
+                    <div key={index} className="pb-4 last:pb-0">
+                      <div className="flex items-start gap-2">
+                        <Badge variant="outline" className={`mt-1 bg-blue-50 text-blue-700 border-blue-200`}>
+                          {index + 1}
+                        </Badge>
+                        <div>
+                          <p className="font-medium text-gray-800">{item.opportunity}</p>
+                          <p className="text-gray-600 text-sm mt-1">{item.context}</p>
+                        </div>
+                      </div>
+                      {index < analysisData.industryOpportunities.length - 1 && (
+                        <Separator className="my-4" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>}
+
+          {/* Strategic Questions */}
+          <Card className="border-none shadow-md">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="text-primary" size={20} />
+                <CardTitle className="text-xl">Strategic Questions</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ol className="space-y-3 list-decimal list-inside">
+                {analysisData.strategicQuestions.map((question, index) => (
+                  <li key={index} className="text-gray-600">{question}</li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* API Key Dialog */}
       <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
@@ -300,22 +667,25 @@ Please format your response as a valid JSON object with the following structure:
           <DialogHeader>
             <DialogTitle>OpenAI API Key Required</DialogTitle>
             <DialogDescription>
-              To analyze documents, you need to provide your OpenAI API key. 
-              You can set it permanently in the Settings page.
+              To analyze documents, you need to provide your OpenAI API key.
             </DialogDescription>
           </DialogHeader>
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitApiKey)} className="space-y-4">
-              <FormField control={form.control} name="apiKey" render={({
-              field
-            }) => <FormItem>
+              <FormField
+                control={form.control}
+                name="apiKey"
+                render={({ field }) => (
+                  <FormItem>
                     <FormLabel>OpenAI API Key</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="sk-..." {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>} />
+                  </FormItem>
+                )}
+              />
               <div className="flex justify-end">
                 <Button type="submit">Continue with analysis</Button>
               </div>
@@ -323,7 +693,8 @@ Please format your response as a valid JSON object with the following structure:
           </Form>
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  );
 };
 
 export default InternalAnalysis;

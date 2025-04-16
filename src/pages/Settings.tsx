@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -9,32 +8,57 @@ import { toast } from '@/components/ui/use-toast';
 const Settings = () => {
   const [perplexityApiKey, setPerplexityApiKey] = useState('');
   const [openaiApiKey, setOpenaiApiKey] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   
-  // Load saved settings on init
   useEffect(() => {
     const savedPerplexityKey = localStorage.getItem('perplexityApiKey');
-    const savedOpenaiKey = localStorage.getItem('openaiApiKey');
+    const savedOpenAIKey = localStorage.getItem('openaiApiKey');
+    
+    console.log('Loading settings...');
+    console.log('Perplexity API Key:', savedPerplexityKey ? 'Present' : 'Not found');
     
     if (savedPerplexityKey) setPerplexityApiKey(savedPerplexityKey);
-    if (savedOpenaiKey) setOpenaiApiKey(savedOpenaiKey);
+    if (savedOpenAIKey) setOpenaiApiKey(savedOpenAIKey);
   }, []);
   
-  const handleSaveSettings = () => {
-    setIsSaving(true);
-    
-    // Save settings to localStorage
-    localStorage.setItem('perplexityApiKey', perplexityApiKey);
-    localStorage.setItem('openaiApiKey', openaiApiKey);
-    
-    // Simulate brief saving time
-    setTimeout(() => {
+  const handlePerplexityKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPerplexityApiKey(e.target.value);
+    setSaveStatus('idle');
+  };
+  
+  const handleOpenAIKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOpenaiApiKey(e.target.value);
+    setSaveStatus('idle');
+  };
+  
+  const handleSave = () => {
+    try {
+      setSaveStatus('saving');
+      console.log('Saving API keys...');
+      
+      if (perplexityApiKey) {
+        localStorage.setItem('perplexityApiKey', perplexityApiKey);
+        console.log('Perplexity API Key saved');
+      }
+      
+      if (openaiApiKey) {
+        localStorage.setItem('openaiApiKey', openaiApiKey);
+      }
+      
+      setSaveStatus('saved');
       toast({
         title: "Settings saved",
-        description: "Your API keys have been updated.",
+        description: "API keys have been updated successfully"
       });
-      setIsSaving(false);
-    }, 500);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setSaveStatus('error');
+      toast({
+        title: "Error saving",
+        description: "Could not save settings. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   return (
@@ -56,11 +80,11 @@ const Settings = () => {
                   id="perplexity-api"
                   type="password"
                   value={perplexityApiKey}
-                  onChange={(e) => setPerplexityApiKey(e.target.value)}
+                  onChange={handlePerplexityKeyChange}
                   placeholder="Enter your Perplexity API key"
                 />
                 <p className="text-xs text-gray-500">
-                  Used for external market analysis and company insights. Get it from <a href="https://www.perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">perplexity.ai/settings/api</a>
+                  Used for external market analysis. Get your key at <a href="https://www.perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">perplexity.ai/settings/api</a>
                 </p>
               </div>
               
@@ -70,23 +94,31 @@ const Settings = () => {
                   id="openai-api"
                   type="password"
                   value={openaiApiKey}
-                  onChange={(e) => setOpenaiApiKey(e.target.value)}
+                  onChange={handleOpenAIKeyChange}
                   placeholder="Enter your OpenAI API key"
                 />
                 <p className="text-xs text-gray-500">
-                  Used for internal document analysis and strategic insights. Required for analyzing client documents in the Internal Analysis section.
+                  Used for internal document analysis.
                 </p>
               </div>
+
+              <Button 
+                onClick={handleSave} 
+                disabled={saveStatus === 'saving'}
+                className="w-full"
+              >
+                {saveStatus === 'saving' ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                    Saving...
+                  </>
+                ) : saveStatus === 'saved' ? (
+                  'Saved ✓'
+                ) : (
+                  'Save Changes'
+                )}
+              </Button>
             </div>
-          </div>
-          
-          <div className="flex justify-end">
-            <Button 
-              onClick={handleSaveSettings} 
-              disabled={isSaving}
-            >
-              {isSaving ? 'Saving...' : 'Save Settings'}
-            </Button>
           </div>
         </div>
       </div>
