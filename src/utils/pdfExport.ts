@@ -19,25 +19,26 @@ export const exportToPDF = async (
     const margins = {
       top: 20,
       right: 20,
-      bottom: 30, // Increased to give more space for page number
+      bottom: 30,
       left: 20
     };
 
     // Get total dimensions of the element
     const { height } = element.getBoundingClientRect();
     const totalHeight = Math.max(height, element.scrollHeight);
-    const a4Width = 210; // A4 width in mm
-    const a4Height = 297; // A4 height in mm
+    const a4Width = 210;
+    const a4Height = 297;
     const contentWidth = a4Width - margins.left - margins.right;
     const contentHeight = a4Height - margins.top - margins.bottom;
-    const maxCanvasHeight = 1200; // Reduced for better content handling
+    const maxCanvasHeight = 1200;
     const numPages = Math.ceil(totalHeight / maxCanvasHeight);
 
-    // Create the PDF
+    // Create the PDF with compression
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: 'a4'
+      format: 'a4',
+      compress: true
     });
 
     // Configure font and styles
@@ -77,7 +78,7 @@ export const exportToPDF = async (
       }
 
       const canvas = await html2canvas(element, {
-        scale: 2, // Higher quality
+        scale: 1.5, // Reduced from 2 to 1.5 for better file size
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
@@ -107,7 +108,8 @@ export const exportToPDF = async (
       // Restore original styles
       element.style.cssText = originalStyle;
 
-      const imgData = canvas.toDataURL('image/png');
+      // Optimize image quality and compression
+      const imgData = canvas.toDataURL('image/jpeg', 0.95); // Changed from PNG to JPEG with 95% quality
       const imgProps = pdf.getImageProperties(imgData);
       
       // Calculate dimensions maintaining aspect ratio and respecting margins
@@ -122,25 +124,44 @@ export const exportToPDF = async (
 
       // Position image respecting margins
       const yPosition = i === 0 ? margins.top + 25 : margins.top;
-      pdf.addImage(imgData, 'PNG', margins.left, yPosition, pdfWidth, pdfHeight);
+      
+      // Add image with compression
+      pdf.addImage({
+        imageData: imgData,
+        format: 'JPEG',
+        x: margins.left,
+        y: yPosition,
+        width: pdfWidth,
+        height: pdfHeight,
+        compression: 'FAST',
+        rotation: 0
+      });
 
       // Add page number with more space
       pdf.setFontSize(10);
-      pdf.setTextColor(128, 128, 128); // Gray color for page number
+      pdf.setTextColor(128, 128, 128);
       pdf.text(
         `Page ${i + 1} of ${numPages}`,
         a4Width / 2,
         a4Height - (margins.bottom / 3),
         { align: 'center' }
       );
-      pdf.setTextColor(0, 0, 0); // Restore black color for the rest of the content
+      pdf.setTextColor(0, 0, 0);
     }
 
     // Restore original scroll position
     window.scrollTo(0, originalScrollPos);
 
-    // Save PDF
-    pdf.save(`${fileName}_${new Date().toISOString().split('T')[0]}.pdf`);
+    // Save PDF with optimization
+    const pdfOutput = pdf.output('arraybuffer');
+    const blob = new Blob([pdfOutput], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${fileName}_${new Date().toISOString().split('T')[0]}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+
   } catch (error) {
     console.error('Error exporting to PDF:', error);
     throw error;
