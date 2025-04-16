@@ -1,73 +1,82 @@
-# Welcome to your Lovable project
+# Strategic Client Hub
 
-## Project info
+Internal platform for account intelligence and strategic insights, combining external signals (via Perplexity API) with internal context (uploaded CSVs, TXT notes, tickets, etc.). Built using `React + Vite + TypeScript + Tailwind + shadcn/ui`.
 
-**URL**: https://lovable.dev/projects/9d4ae222-1adb-49b5-a3ad-851cfc5d5f61
+---
 
-## How can I edit this code?
+## 🚀 Tech Stack
 
-There are several ways of editing your application.
+- **Frontend:** React + Vite + TypeScript  
+- **UI Framework:** shadcn/ui + TailwindCSS  
+- **Dev Tools:** ESLint, Prettier  
+- **Target Deployment:** Vercel / AWS / Railway  
+- **Integrated APIs:** OpenAI, Perplexity (optional)
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9d4ae222-1adb-49b5-a3ad-851cfc5d5f61) and start prompting.
+## 📦 Local Setup
 
-Changes made via Lovable will be committed automatically to this repo.
+1. Clone the repository
 
-**Use your preferred IDE**
+```bash
+git clone https://github.com/juaningrassia/strategic-client-hub.git
+cd strategic-client-hub
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+2. Install dependencies
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```bash
+npm install
+```
 
-Follow these steps:
+3. Create a `.env` file in the root with the following variables:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```env
+VITE_OPENAI_API_KEY=your-api-key
+VITE_PERPLEXITY_API_KEY=your-api-key
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+4. Run the development server
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🧠 Project Structure
 
-**Use GitHub Codespaces**
+```
+/src
+  /pages              # Main views (Internal & External Analysis)
+  /components         # Reusable UI components
+  /contexts           # React context for shared state
+  /auth               # Login / Signup / Protected Routes
+  /utils              # Helpers and utilities
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## 🧪 Current Status
 
-This project is built with:
+✅ Functional editor for internal and external analysis  
+✅ Basic auth system in place  
+⏳ In progress: real API integration, UI/UX polish, deployment
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## 🤝 Contributing
 
-Simply open [Lovable](https://lovable.dev/projects/9d4ae222-1adb-49b5-a3ad-851cfc5d5f61) and click on Share -> Publish.
+Want to collaborate?
 
-## Can I connect a custom domain to my Lovable project?
+1. Fork the repo
+2. Create a new branch (`git checkout -b feature-name`)
+3. Commit your changes (`git commit -am 'add feature'`)
+4. Push to your branch (`git push origin feature-name`)
+5. Open a Pull Request
 
-Yes it is!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🛡️ License
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Private use only / Internal at Santex.
