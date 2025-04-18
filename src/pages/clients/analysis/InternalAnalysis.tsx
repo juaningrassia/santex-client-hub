@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Client } from '@/data/clients';
 import { Button } from '@/components/ui/button';
-import { Upload, FileText, HelpCircle, AlertCircle, TrendingUp, AlertTriangle, ArrowUpRight, ArrowDownRight, LineChart, Download } from 'lucide-react';
+import { Upload, FileText, HelpCircle, AlertCircle, TrendingUp, AlertTriangle, ArrowUpRight, ArrowDownRight, LineChart, Download, X } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -65,10 +65,10 @@ const formSchema = z.object({
 const InternalAnalysis = ({
   client
 }: InternalAnalysisProps) => {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
-  const [fileContent, setFileContent] = useState<string>("");
+  const [fileContents, setFileContents] = useState<string[]>([]);
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -80,10 +80,11 @@ const InternalAnalysis = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+      const newFiles = Array.from(e.target.files);
+      setFiles(prev => [...prev, ...newFiles]);
       toast({
-        title: "File selected",
-        description: `${e.target.files[0].name} is ready for analysis`
+        title: "Files selected",
+        description: `${newFiles.length} file(s) ready for analysis`
       });
     }
   };
@@ -109,50 +110,88 @@ const InternalAnalysis = ({
     });
   };
 
+  const readFilesContent = async (files: File[]): Promise<string[]> => {
+    const contents: string[] = [];
+    
+    for (const file of files) {
+      try {
+        const content = await readFileContent(file);
+        contents.push(content);
+      } catch (error) {
+        console.error(`Error reading file ${file.name}:`, error);
+        throw error;
+      }
+    }
+    
+    return contents;
+  };
+
   const analyzeWithOpenAI = async (content: string, apiKey: string): Promise<AnalysisData> => {
     try {
       const prompt = `You are a senior B2B Account Manager with deep experience in customer strategy, sales, and business consulting.
 
-You will receive internal client information in plain text format (from a CSV or TXT file uploaded by an Account Manager). Your job is to analyze this content and generate two clear, useful outputs.
+You will receive multiple internal client documents in plain text format, separated by "--- New Document ---". These documents may include both CSV files and text documents. Your job is to analyze ALL these documents collectively and generate a comprehensive analysis.
 
 ⚠️ Very important:
-- ONLY use the information provided. Do not invent or assume anything.
-- If something is missing (e.g. business goals), state it clearly.
-- Your tone should be professional, insightful, and focused on business value.
+- CRUCIAL: Process and analyze ALL documents, especially CSV files
+- For CSV files: Parse the data structure and extract meaningful insights
+- For text files: Extract qualitative information and context
+- Cross-reference and combine information from ALL documents
+- If you detect a CSV format, treat it as structured data and analyze its columns and values
+- Your analysis MUST reflect information from ALL provided documents
+- Your tone should be professional, insightful, and focused on business value
 
 ---
 
 🧠 Part 1: Executive Summary  
-Write a concise and actionable summary based only on the provided input. Use short paragraphs or bullet points.
+Write a comprehensive and actionable summary based on ALL provided documents. Use short paragraphs or bullet points.
 
 Include:
-- General description of the client and current situation (if mentioned)
-- Business goals (only if explicitly or implicitly mentioned)
-- Products/services purchased and their status
-- Problems or risks mentioned in the text
-- Opportunities for growth or improvement
-- Final recommendations for the Account Manager
+- General description of the client and current situation (from ALL documents)
+- Quantitative data analysis from CSV files (if present)
+- Business goals and metrics (from ALL sources)
+- Products/services information (from ALL documents)
+- Problems or risks (from ALL sources)
+- Opportunities for growth (from ALL sources)
+- Final recommendations based on complete analysis
 
 ---
 
-❓ Part 2: 10 Strategic Questions  
-Generate 10 smart and specific questions that an Account Manager should ask this client. These questions should:
+❓ Part 2: Strategic Analysis
+Based on ALL documents provided:
 
-- Be directly inspired by the information in the input
-- Help uncover needs, blockers, or opportunities
-- Encourage strategic and business-oriented conversations
+1. Data Analysis (if CSV present):
+   - Key metrics and trends from CSV data
+   - Statistical insights and patterns
+   - Correlation with information from text documents
 
-Avoid generic questions. If the input is too limited to create 10 strong questions, generate fewer and explain why.
+2. Risk Assessment:
+   - Quantitative risks (from CSV data)
+   - Qualitative risks (from text documents)
+   - Combined risk analysis from all sources
+
+3. Opportunity Analysis:
+   - Data-driven opportunities (from CSV)
+   - Strategic opportunities (from text)
+   - Combined opportunity assessment
+
+4. Strategic Questions (EXACTLY 10 required):
+   YOU MUST GENERATE EXACTLY 10 QUESTIONS, including:
+   - Questions based on CSV data analysis
+   - Questions about trends and patterns
+   - Questions about potential contradictions
+   - Questions about unexplored areas
+   - Questions about strategic alignment
 
 ---
 
-Here is the internal client information:
+Here are the internal client documents:
 
 ${content}
 
 Please format your response as a valid JSON object with the following structure:
 {
-  "executiveSummary": "Your executive summary here...",
+  "executiveSummary": "Your comprehensive executive summary here...",
   "riskScore": {
     "overall": 65,
     "companyRisk": 70,
@@ -161,34 +200,52 @@ Please format your response as a valid JSON object with the following structure:
   },
   "companyRisks": [
     {
-      "risk": "Sample Company Risk 1",
-      "severity": "high",
-      "explanation": "Explanation of the risk..."
+      "risk": "Risk identified from documents (including CSV data)",
+      "severity": "high|medium|low",
+      "explanation": "Explanation with reference to specific documents and data points"
     }
   ],
   "companyOpportunities": [
     {
-      "opportunity": "Sample Company Opportunity 1",
-      "potential": "high",
-      "context": "Context of the opportunity..."
+      "opportunity": "Opportunity identified across documents (including CSV insights)",
+      "potential": "high|medium|low",
+      "context": "Context with reference to specific documents and data"
     }
   ],
   "industryRisks": [
     {
-      "risk": "Sample Industry Risk 1",
-      "severity": "medium",
-      "explanation": "Explanation of the industry risk..."
+      "risk": "Industry risk identified",
+      "severity": "high|medium|low",
+      "explanation": "Explanation with cross-document references"
     }
   ],
   "industryOpportunities": [
     {
-      "opportunity": "Sample Industry Opportunity 1",
-      "potential": "high",
-      "context": "Context of the industry opportunity..."
+      "opportunity": "Industry opportunity identified",
+      "potential": "high|medium|low",
+      "context": "Context with cross-document references"
     }
   ],
-  "strategicQuestions": ["Sample strategic question 1?", "Sample strategic question 2?"]
-}`;
+  "strategicQuestions": [
+    "Question 1 based on CSV data analysis",
+    "Question 2 about quantitative trends",
+    "Question 3 about qualitative insights",
+    "Question 4 about risk mitigation",
+    "Question 5 about growth opportunities",
+    "Question 6 about market positioning",
+    "Question 7 about operational efficiency",
+    "Question 8 about strategic alignment",
+    "Question 9 about competitive advantage",
+    "Question 10 about future scalability"
+  ]
+}
+
+CRITICAL REQUIREMENTS:
+1. You MUST generate EXACTLY 10 strategic questions
+2. You MUST analyze ALL documents, especially CSV files
+3. You MUST incorporate CSV data analysis in all sections
+4. You MUST maintain proper JSON formatting
+5. You MUST reference specific data points from CSV files in your analysis`;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -236,10 +293,10 @@ Please format your response as a valid JSON object with the following structure:
   };
 
   const handleAnalyze = async () => {
-    if (!file) {
+    if (files.length === 0) {
       toast({
-        title: "No file selected",
-        description: "Please select a file to analyze",
+        title: "No files selected",
+        description: "Please select at least one file to analyze",
         variant: "destructive"
       });
       return;
@@ -253,19 +310,20 @@ Please format your response as a valid JSON object with the following structure:
 
     setIsLoading(true);
     try {
-      const content = await readFileContent(file);
-      setFileContent(content);
-      const analysis = await analyzeWithOpenAI(content, apiKey);
+      const contents = await readFilesContent(files);
+      setFileContents(contents);
+      const combinedContent = contents.join('\n\n--- New Document ---\n\n');
+      const analysis = await analyzeWithOpenAI(combinedContent, apiKey);
       setAnalysisData(analysis);
       toast({
         title: "Analysis complete",
-        description: "Document has been successfully analyzed"
+        description: "Documents have been successfully analyzed"
       });
     } catch (error) {
       console.error("Error during analysis:", error);
       toast({
         title: "Analysis failed",
-        description: "There was a problem analyzing your document. Please try again.",
+        description: "There was a problem analyzing your documents. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -286,12 +344,17 @@ Please format your response as a valid JSON object with the following structure:
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setFile(e.dataTransfer.files[0]);
+      const newFiles = Array.from(e.dataTransfer.files);
+      setFiles(prev => [...prev, ...newFiles]);
       toast({
-        title: "File selected",
-        description: `${e.dataTransfer.files[0].name} is ready for analysis`
+        title: "Files selected",
+        description: `${newFiles.length} file(s) ready for analysis`
       });
     }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const getSeverityColor = (severity: 'high' | 'medium' | 'low') => {
@@ -436,21 +499,50 @@ Please format your response as a valid JSON object with the following structure:
             <div className="flex flex-col items-center justify-center">
               <Upload className="text-gray-400 mb-2" size={28} />
               <p className="text-gray-600 mb-2">
-                {file ? file.name : 'Drag and drop a file, or click to browse'}
+                {files.length > 0 
+                  ? `${files.length} file(s) selected` 
+                  : 'Drag and drop files, or click to browse'}
               </p>
               <p className="text-xs text-gray-500">
-                Supports CSV and TXT up to 10MB
+                Supports CSV and TXT up to 10MB per file
               </p>
               
               <label className="mt-2 cursor-pointer">
                 <span className="text-sm text-primary">Browse files</span>
-                <input type="file" accept=".csv,.txt" className="hidden" onChange={handleFileChange} />
+                <input 
+                  type="file" 
+                  accept=".csv,.txt" 
+                  multiple 
+                  className="hidden" 
+                  onChange={handleFileChange} 
+                />
               </label>
             </div>
           </div>
+
+          {files.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-sm font-medium mb-2">Selected files:</h4>
+              <ul className="text-sm text-gray-600 space-y-2">
+                {files.map((file, index) => (
+                  <li key={index} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-md">
+                    <span className="truncate flex-1 mr-4">{file.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X size={16} />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           
-          <Button onClick={handleAnalyze} disabled={isLoading || !file} className="w-full">
-            {isLoading ? 'Analyzing...' : 'Analyze Document'}
+          <Button onClick={handleAnalyze} disabled={isLoading || files.length === 0} className="w-full">
+            {isLoading ? 'Analyzing...' : 'Analyze Documents'}
           </Button>
         </div>
         
