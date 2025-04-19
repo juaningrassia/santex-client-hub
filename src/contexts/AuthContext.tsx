@@ -1,62 +1,59 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { AuthContextType, AuthState, LoginData, SignUpData, User } from '@/types/auth';
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Session, User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+
+interface AuthContextType {
+  session: Session | null;
+  user: User | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'auth:user';
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [authState, setAuthState] = useState<AuthState>(() => {
-    const storedUser = localStorage.getItem(STORAGE_KEY);
-    if (storedUser) {
-      const user = JSON.parse(storedUser) as User;
-      return { user, isAuthenticated: true };
-    }
-    return { user: null, isAuthenticated: false };
-  });
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const { toast } = useToast();
 
-  const login = useCallback(async (data: LoginData) => {
-    // Simulación de validación
-    if (!data.email || !data.password) {
-      throw new Error('Todos los campos son requeridos');
-    }
-    
-    // Simulación de autenticación exitosa
-    const user: User = { email: data.email };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    setAuthState({ user, isAuthenticated: true });
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const signup = useCallback(async (data: SignUpData) => {
-    // Validación básica
-    if (!data.email || !data.password || !data.confirmPassword) {
-      throw new Error('Todos los campos son requeridos');
-    }
-    
-    if (data.password !== data.confirmPassword) {
-      throw new Error('Las contraseñas no coinciden');
-    }
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  };
 
-    // Simulación de registro exitoso
-    const user: User = { email: data.email };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    setAuthState({ user, isAuthenticated: true });
-  }, []);
+  const signUp = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+  };
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
-    setAuthState({ user: null, isAuthenticated: false });
-  }, []);
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  };
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        ...authState,
-        login,
-        signup,
-        logout
-      }}
-    >
+    <AuthContext.Provider value={{ session, user, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
@@ -65,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};
