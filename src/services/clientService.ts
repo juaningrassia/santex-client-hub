@@ -23,10 +23,18 @@ export async function getClientById(id: string) {
   return data as Client;
 }
 
-export async function createClient(client: NewClient) {
+export async function createClient(client: Omit<NewClient, 'user_id'>) {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  
+  if (userError) throw userError;
+  if (!userData.user) throw new Error('Not authenticated');
+  
   const { data, error } = await supabase
     .from('clients')
-    .insert(client)
+    .insert({
+      ...client,
+      user_id: userData.user.id,
+    })
     .select()
     .single();
     
@@ -34,7 +42,7 @@ export async function createClient(client: NewClient) {
   return data as Client;
 }
 
-export async function updateClient(id: string, client: Partial<NewClient>) {
+export async function updateClient(id: string, client: Partial<Omit<NewClient, 'user_id'>>) {
   const { data, error } = await supabase
     .from('clients')
     .update(client)

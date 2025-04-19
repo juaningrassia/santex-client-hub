@@ -17,4 +17,4 @@ export interface Client {
   updated_at: string;
 }
 
-export type NewClient = Omit<Client, 'id' | 'user_id' | 'created_at' | 'updated_at'>;
+export type NewClient = Omit<Client, 'id' | 'created_at' | 'updated_at'>;

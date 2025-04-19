@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
 import ClientForm from './ClientForm';
-import { createClient } from '@/data/clients';
+import { createClient } from '@/services/clientService';
 import { toast } from '@/components/ui/use-toast';
 
 const AddClient = () => {
