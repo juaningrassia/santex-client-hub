@@ -26,7 +26,7 @@ export async function getClientById(id: string) {
 export async function createClient(client: NewClient) {
   const { data, error } = await supabase
     .from('clients')
-    .insert([client])
+    .insert(client)
     .select()
     .single();
     

@@ -1,17 +1,58 @@
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
-import { clients } from '@/data/clients';
+import { getClientById, Client } from '@/data/clients';
 import { ArrowLeft, Building, Mail, Phone, MapPin, Calendar, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
 import ExternalAnalysis from './analysis/ExternalAnalysis';
 import InternalAnalysis from './analysis/InternalAnalysis';
+import { toast } from '@/components/ui/use-toast';
 
 const ClientDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const client = clients.find((c) => c.id === Number(id));
+  const navigate = useNavigate();
+  const [client, setClient] = useState<Client | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    if (id) {
+      const fetchClient = async () => {
+        try {
+          const fetchedClient = await getClientById(id);
+          setClient(fetchedClient);
+        } catch (error) {
+          console.error("Error fetching client:", error);
+          toast({
+            title: "Client not found",
+            description: "The requested client could not be found.",
+            variant: "destructive"
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchClient();
+    }
+  }, [id]);
+  
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-full py-12">
+          <div className="text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
+              <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
+            </div>
+            <p className="mt-2 text-gray-600">Loading client data...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
   
   if (!client) {
     return (
@@ -80,7 +121,7 @@ const ClientDetail = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Email</p>
-                <p className="text-gray-800">{client.contactEmail}</p>
+                <p className="text-gray-800">{client.contact_email}</p>
               </div>
             </div>
             
@@ -90,7 +131,7 @@ const ClientDetail = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Phone</p>
-                <p className="text-gray-800">{client.contactPhone}</p>
+                <p className="text-gray-800">{client.contact_phone}</p>
               </div>
             </div>
             
@@ -100,7 +141,7 @@ const ClientDetail = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Client Since</p>
-                <p className="text-gray-800">{new Date(client.startDate).toLocaleDateString()}</p>
+                <p className="text-gray-800">{client.start_date ? new Date(client.start_date).toLocaleDateString() : 'N/A'}</p>
               </div>
             </div>
             

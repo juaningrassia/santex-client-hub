@@ -40,11 +40,11 @@ const ClientForm = ({ client, onSave, isLoading = false }: ClientFormProps) => {
     status: client.status,
     revenue: client.revenue,
     growth: client.growth,
-    contactName: client.contactName,
-    contactEmail: client.contactEmail,
-    contactPhone: client.contactPhone,
+    contact_name: client.contact_name,
+    contact_email: client.contact_email,
+    contact_phone: client.contact_phone,
     address: client.address,
-    startDate: client.startDate,
+    start_date: client.start_date,
     notes: client.notes,
   } : {
     name: '',
@@ -52,11 +52,11 @@ const ClientForm = ({ client, onSave, isLoading = false }: ClientFormProps) => {
     status: 'Active' as const,
     revenue: 0,
     growth: 0,
-    contactName: '',
-    contactEmail: '',
-    contactPhone: '',
+    contact_name: '',
+    contact_email: '',
+    contact_phone: '',
     address: '',
-    startDate: new Date().toISOString().split('T')[0],
+    start_date: new Date().toISOString().split('T')[0],
     notes: '',
   };
   
@@ -167,7 +167,7 @@ const ClientForm = ({ client, onSave, isLoading = false }: ClientFormProps) => {
             
             <FormField
               control={form.control}
-              name="startDate"
+              name="start_date"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Start Date</FormLabel>
@@ -182,7 +182,7 @@ const ClientForm = ({ client, onSave, isLoading = false }: ClientFormProps) => {
           <div className="space-y-4">
             <FormField
               control={form.control}
-              name="contactName"
+              name="contact_name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Contact Name</FormLabel>
@@ -195,7 +195,7 @@ const ClientForm = ({ client, onSave, isLoading = false }: ClientFormProps) => {
             
             <FormField
               control={form.control}
-              name="contactEmail"
+              name="contact_email"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Contact Email</FormLabel>
@@ -208,7 +208,7 @@ const ClientForm = ({ client, onSave, isLoading = false }: ClientFormProps) => {
             
             <FormField
               control={form.control}
-              name="contactPhone"
+              name="contact_phone"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Contact Phone</FormLabel>

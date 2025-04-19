@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
-import { clients, deleteClient } from '@/data/clients';
+import { getClients, deleteClient, Client } from '@/data/clients';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Search, 
@@ -34,17 +35,39 @@ import { toast } from '@/components/ui/use-toast';
 
 const ClientsIndex = () => {
   const navigate = useNavigate();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'name' | 'revenue' | 'growth'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [clientToDelete, setClientToDelete] = useState<number | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+  
+  useEffect(() => {
+    fetchClients();
+  }, []);
+  
+  const fetchClients = async () => {
+    try {
+      const data = await getClients();
+      setClients(data);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      toast({
+        title: "Error",
+        description: "There was an error loading clients. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const clientToDeleteData = clientToDelete 
     ? clients.find(c => c.id === clientToDelete)
     : null;
   
-  // Filtrar clientes
+  // Filter clients
   const filteredClients = clients
     .filter(client => {
       const matchesSearch = client.name
@@ -65,12 +88,15 @@ const ClientsIndex = () => {
           : bValue.localeCompare(aValue);
       }
       
+      const aNum = Number(aValue) || 0;
+      const bNum = Number(bValue) || 0;
+      
       return sortOrder === 'asc'
-        ? Number(aValue) - Number(bValue)
-        : Number(bValue) - Number(aValue);
+        ? aNum - bNum
+        : bNum - aNum;
     });
   
-  // Manejar ordenamiento
+  // Handle sorting
   const handleSort = (field: 'name' | 'revenue' | 'growth') => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -81,27 +107,47 @@ const ClientsIndex = () => {
   };
   
   // Handle delete client
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (clientToDelete === null) return;
     
     const clientName = clientToDeleteData?.name || 'Client';
-    const result = deleteClient(clientToDelete);
     
-    if (result) {
+    try {
+      await deleteClient(clientToDelete);
+      
       toast({
         title: "Client deleted",
         description: `${clientName} has been successfully removed.`,
       });
-    } else {
+      
+      // Remove the deleted client from the state
+      setClients(prevClients => prevClients.filter(c => c.id !== clientToDelete));
+    } catch (error) {
+      console.error("Error deleting client:", error);
       toast({
         title: "Error",
         description: "There was an error deleting the client.",
         variant: "destructive"
       });
+    } finally {
+      setClientToDelete(null);
     }
-    
-    setClientToDelete(null);
   };
+  
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-full py-12">
+          <div className="text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
+              <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
+            </div>
+            <p className="mt-2 text-gray-600">Loading clients...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
   
   return (
     <MainLayout>
@@ -213,10 +259,10 @@ const ClientsIndex = () => {
                       {client.status}
                     </span>
                   </td>
-                  <td className="py-4 px-2 text-gray-600">${client.revenue.toLocaleString()}</td>
+                  <td className="py-4 px-2 text-gray-600">${client.revenue ? client.revenue.toLocaleString() : 0}</td>
                   <td className="py-4 px-2">
-                    <span className={client.growth >= 0 ? 'text-green-600' : 'text-red-600'}>
-                      {client.growth >= 0 ? '+' : ''}{client.growth}%
+                    <span className={client.growth && client.growth >= 0 ? 'text-green-600' : 'text-red-600'}>
+                      {client.growth !== null ? (client.growth >= 0 ? '+' : '') + client.growth + '%' : 'N/A'}
                     </span>
                   </td>
                   <td className="py-4 pl-2 pr-4 text-right">

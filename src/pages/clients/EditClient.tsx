@@ -15,68 +15,53 @@ const EditClient = () => {
   
   useEffect(() => {
     if (id) {
-      try {
-        const clientId = parseInt(id, 10);
-        const fetchedClient = getClientById(clientId);
-        
-        if (fetchedClient) {
+      const fetchClient = async () => {
+        try {
+          const fetchedClient = await getClientById(id);
           setClient(fetchedClient);
-        } else {
+        } catch (error) {
+          console.error("Error fetching client:", error);
           toast({
             title: "Client not found",
             description: "The requested client could not be found.",
             variant: "destructive"
           });
           navigate('/clients');
+        } finally {
+          setIsLoadingClient(false);
         }
-      } catch (error) {
-        console.error("Error fetching client:", error);
-        toast({
-          title: "Error",
-          description: "There was an error loading the client. Please try again.",
-          variant: "destructive"
-        });
-        navigate('/clients');
-      } finally {
-        setIsLoadingClient(false);
-      }
+      };
+      
+      fetchClient();
     }
   }, [id, navigate]);
   
-  const handleUpdateClient = (clientData: Omit<Client, 'id'>) => {
+  const handleUpdateClient = async (clientData: Omit<Client, 'id'>) => {
     if (!id) return;
     
     setIsLoading(true);
-    const clientId = parseInt(id, 10);
     
-    // Simular un pequeño delay para la experiencia de usuario
-    setTimeout(() => {
-      try {
-        // Actualizar el cliente
-        const updatedClient = updateClient(clientId, clientData);
-        
-        if (updatedClient) {
-          toast({
-            title: "Client updated",
-            description: `${updatedClient.name} has been successfully updated.`,
-          });
-          
-          // Redirigir a la página de detalles del cliente
-          navigate(`/clients/${updatedClient.id}`);
-        } else {
-          throw new Error("Failed to update client");
-        }
-      } catch (error) {
-        console.error("Error updating client:", error);
-        toast({
-          title: "Error",
-          description: "There was an error updating the client. Please try again.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }, 800);
+    try {
+      // Update the client
+      const updatedClient = await updateClient(id, clientData);
+      
+      toast({
+        title: "Client updated",
+        description: `${updatedClient.name} has been successfully updated.`,
+      });
+      
+      // Redirect to the client details page
+      navigate(`/clients/${updatedClient.id}`);
+    } catch (error) {
+      console.error("Error updating client:", error);
+      toast({
+        title: "Error",
+        description: "There was an error updating the client. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   if (isLoadingClient) {
