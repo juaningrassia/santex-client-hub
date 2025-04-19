@@ -63,6 +63,48 @@ export type Database = {
         }
         Relationships: []
       }
+      external_analyses: {
+        Row: {
+          client_id: string
+          created_at: string
+          data: Json
+          id: string
+          search_term: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          data: Json
+          id?: string
+          search_term: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          search_term?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_analyses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_client"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

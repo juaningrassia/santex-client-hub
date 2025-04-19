@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Client } from '@/data/clients';
+import type { Client } from '@/types/client';
 import { Button } from '@/components/ui/button';
-import { Search, AlertTriangle, ArrowRight, TrendingUp, Newspaper, Link as LinkIcon, AlertCircle, LineChart, Loader2, RefreshCw, Download } from 'lucide-react';
+import { Search, AlertTriangle, ArrowRight, TrendingUp, Newspaper, Link as LinkIcon, AlertCircle, LineChart, Loader2, RefreshCw, Download, History } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { exportToPDF } from '@/utils/pdfExport';
+import { saveAnalysis, getClientAnalyses, type ExternalAnalysis } from '@/services/analysisService';
 
 interface ExternalAnalysisProps {
   client: Client;
@@ -41,8 +42,8 @@ interface AnalysisData {
   }>;
 }
 
-// Mock API response data for fallback
 const mockAnalysisData: AnalysisData = {
+  // Mock API response data for fallback
   executiveSummary: [
     "Strong market position in fast-food industry with multiple established brands",
     "Digital transformation initiatives showing positive results in sales growth",
@@ -135,10 +136,31 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
   const [searchTerm, setSearchTerm] = useState(client.name);
   const [isLoading, setIsLoading] = useState(false);
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
+  const [previousAnalyses, setPreviousAnalyses] = useState<ExternalAnalysis[]>([]);
   const [apiKey, setApiKey] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loadingPrevious, setLoadingPrevious] = useState(true);
   
-  // Load API key from localStorage on init
+  useEffect(() => {
+    const loadPreviousAnalyses = async () => {
+      try {
+        const analyses = await getClientAnalyses(client.id);
+        setPreviousAnalyses(analyses);
+      } catch (error) {
+        console.error('Error loading previous analyses:', error);
+        toast({
+          title: "Error",
+          description: "Could not load previous analyses",
+          variant: "destructive"
+        });
+      } finally {
+        setLoadingPrevious(false);
+      }
+    };
+    
+    loadPreviousAnalyses();
+  }, [client.id]);
+  
   useEffect(() => {
     const savedApiKey = localStorage.getItem('perplexityApiKey');
     if (savedApiKey) {
@@ -156,7 +178,6 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
       return;
     }
 
-    // Validar formato de la API key
     if (!apiKey.match(/^pplx-[a-zA-Z0-9]{32,}$/)) {
       toast({
         title: "Invalid API key",
@@ -334,7 +355,6 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
           variant: "destructive"
         });
         
-        // Solo usar datos de respaldo si es un error de servidor
         if (response.status >= 500) {
           setAnalysisData(mockAnalysisData);
         }
@@ -349,36 +369,17 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
       }
       
       try {
-        const contentText = data.choices[0].message.content;
-        console.log("Response content:", contentText);
+        let parsedData = JSON.parse(data.choices[0].message.content);
         
-        let parsedData;
-        try {
-          parsedData = JSON.parse(contentText);
-        } catch (initialParseError) {
-          console.log("Initial parsing error, trying to extract JSON...");
-          const jsonMatch = contentText.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            parsedData = JSON.parse(jsonMatch[0]);
-          } else {
-            throw new Error("No valid JSON could be extracted from the response");
-          }
-        }
-        
-        // Validación exhaustiva de la estructura de datos
-        if (!parsedData.executiveSummary?.length || 
-            !parsedData.companyRisks?.length || 
-            !parsedData.companyOpportunities?.length || 
-            !parsedData.industryRisks?.length || 
-            !parsedData.industryOpportunities?.length || 
-            !parsedData.sources?.length) {
-          throw new Error("The response does not contain all required fields");
-        }
+        await saveAnalysis(client.id, searchTerm, parsedData);
         
         setAnalysisData(parsedData);
+        const updatedAnalyses = await getClientAnalyses(client.id);
+        setPreviousAnalyses(updatedAnalyses);
+        
         toast({
           title: "Analysis Completed",
-          description: "Strategic analysis has been generated successfully.",
+          description: "Strategic analysis has been generated and saved successfully.",
         });
       } catch (parseError) {
         console.error("Error processing response:", parseError);
@@ -400,6 +401,15 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  const loadPreviousAnalysis = (analysis: ExternalAnalysis) => {
+    setAnalysisData(analysis.data);
+    setSearchTerm(analysis.search_term);
+    toast({
+      title: "Previous Analysis Loaded",
+      description: `Loaded analysis from ${new Date(analysis.created_at).toLocaleDateString()}`,
+    });
   };
   
   const handleExportPDF = async () => {
@@ -753,6 +763,39 @@ const ExternalAnalysis = ({ client }: ExternalAnalysisProps) => {
             </Button>
           </div>
         </div>
+      )}
+      
+      {!isLoading && previousAnalyses.length > 0 && !analysisData && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="text-primary" size={20} />
+              Previous Analyses
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {previousAnalyses.map((analysis) => (
+                <div key={analysis.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium">{analysis.search_term}</p>
+                    <p className="text-sm text-gray-500">
+                      {new Date(analysis.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => loadPreviousAnalysis(analysis)}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowRight size={16} />
+                    View Analysis
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
