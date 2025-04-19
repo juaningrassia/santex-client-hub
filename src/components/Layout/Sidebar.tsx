@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Users, Settings, LogOut } from 'lucide-react';
@@ -13,7 +14,7 @@ import {
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const path = location.pathname;
   
   const menuItems = [{
@@ -26,8 +27,8 @@ const Sidebar = () => {
     label: 'Settings'
   }];
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate('/login');
   };
   
