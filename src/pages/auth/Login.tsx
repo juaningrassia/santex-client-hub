@@ -28,7 +28,7 @@ export default function Login() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : 'Error al iniciar sesión'
+        description: error instanceof Error ? error.message : 'Error signing in'
       });
     } finally {
       setIsLoading(false);
@@ -39,11 +39,11 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <h2 className="text-2xl font-bold text-center">Iniciar sesión</h2>
+          <h2 className="text-2xl font-bold text-center">Sign In</h2>
           <p className="text-center text-muted-foreground">
-            ¿No tienes una cuenta?{' '}
+            Don't have an account?{' '}
             <Link to="/signup" className="text-primary hover:underline">
-              Regístrate
+              Sign Up
             </Link>
           </p>
         </CardHeader>
@@ -63,7 +63,7 @@ export default function Login() {
               <Input
                 id="password"
                 type="password"
-                placeholder="Contraseña"
+                placeholder="Password"
                 value={formData.password}
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                 required
@@ -76,7 +76,7 @@ export default function Login() {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+              {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </CardFooter>
         </form>

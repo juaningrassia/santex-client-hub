@@ -24,7 +24,7 @@ export default function SignUp() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Las contraseñas no coinciden"
+        description: "Passwords don't match"
       });
       return;
     }
@@ -35,14 +35,14 @@ export default function SignUp() {
       await signUp(formData.email, formData.password);
       navigate('/clients');
       toast({
-        title: "Cuenta creada",
-        description: "Tu cuenta ha sido creada exitosamente"
+        title: "Success",
+        description: "Your account has been created successfully"
       });
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : 'Error al crear la cuenta'
+        description: error instanceof Error ? error.message : 'Error creating account'
       });
     } finally {
       setIsLoading(false);
@@ -53,11 +53,11 @@ export default function SignUp() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <h2 className="text-2xl font-bold text-center">Crear cuenta</h2>
+          <h2 className="text-2xl font-bold text-center">Create Account</h2>
           <p className="text-center text-muted-foreground">
-            ¿Ya tienes una cuenta?{' '}
+            Already have an account?{' '}
             <Link to="/login" className="text-primary hover:underline">
-              Inicia sesión
+              Sign In
             </Link>
           </p>
         </CardHeader>
@@ -77,7 +77,7 @@ export default function SignUp() {
               <Input
                 id="password"
                 type="password"
-                placeholder="Contraseña"
+                placeholder="Password"
                 value={formData.password}
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                 required
@@ -87,7 +87,7 @@ export default function SignUp() {
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="Confirmar contraseña"
+                placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                 required
@@ -100,7 +100,7 @@ export default function SignUp() {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? 'Creando cuenta...' : 'Crear cuenta'}
+              {isLoading ? 'Creating account...' : 'Create Account'}
             </Button>
           </CardFooter>
         </form>
